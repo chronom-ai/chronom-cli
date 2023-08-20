@@ -8,16 +8,16 @@ commands:
   help: Create Resources
   dependencies:
     aws: |-
-      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
       Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
     kubectl: |-
-      Please run 'chronom-cli setup kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+      Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
       Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/
     eksctl: |-
-      Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+      Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
       Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
     helm: |-
-      Please run 'chronom-cli setup helm' to install helm - https://helm.sh/docs/intro/install/
+      Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
       Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/
     curl: Please install curl - https://curl.se/download.html
 
@@ -284,10 +284,10 @@ commands:
   help: List Resources
   dependencies:
     aws: |-
-      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
       Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
     eksctl: |-
-      Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+      Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
       Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
   commands:
 
@@ -307,7 +307,7 @@ commands:
   help: Delete Resources
   dependencies:
     aws: |-
-      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
       Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
   commands:
