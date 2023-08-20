@@ -1,5 +1,0 @@
-*.pem
-*key.txt
-*user-info.yaml
-credentials/
-tests/
