@@ -15,19 +15,19 @@ create_chronom_user() {
     aws iam attach-role-policy --role-name $roleName --policy-arn $roPolicyArn
     accessKey=$(aws iam create-access-key --user-name $userName --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
     
-    echo "# Successfull created user $userName and role $roleName"
-    echo "# Role ARN: $roleArn"
+    green "# Successfull created user $userName and role $roleName"
+    green "# Role ARN: $roleArn"
     
     if [ ! "$skip" ]; then
         echo "awsscanner:" > $userName-info.yaml
         echo "  roleArn: $userArn" >> $userName-info.yaml
         echo
-        echo "Access Key Created Successfully!"
-        echo "1. Print Access Key to console"
-        echo "2. Save Access Key to file $userName-access-key.txt"
-        echo "3. Print Access Key to console And Save to file $userName-access-key.txt"
-        echo "4. NOT RECOMMENDED - Do Nothing"
-        echo "Enter your choice (1/2/3/4):"
+        green_underlined "Access Key Created Successfully!"
+        green_underlined "1. Print Access Key to console"
+        green_underlined "2. Save Access Key to file $userName-access-key.txt"
+        green_underlined "3. Print Access Key to console And Save to file $userName-access-key.txt"
+        green_underlined "4. NOT RECOMMENDED - Do Nothing"
+        green_underlined "Enter your choice (1/2/3/4):"
         echo
         read choice
         case "$choice" in

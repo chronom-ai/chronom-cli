@@ -50,17 +50,17 @@ find_create_compatible_dns_zone_cname() {
     if [[ $zonesFound == 1 ]]; then
         dnsZoneId=$(aws route53 list-hosted-zones-by-name --dns-name "$dnsZone" --query "HostedZones[?Name=='$dnsZone.'].Id" --output text)
         dnsZoneId=${dnsZoneId##*/}
-        echo "# Route53 Hosted Zone ID found: $dnsZoneId, Zone: $dnsZone, Creating CNAME record..."
+        yellow "# Route53 Hosted Zone ID found: $dnsZoneId, Zone: $dnsZone, Creating CNAME record..."
         create_cname_record $validationName $validationValue $dnsZoneId
-        echo "# CNAME record created successfully"
+        green "# CNAME record created successfully"
     else
-        echo "# No Route53 Hosted Zone found for $dnsZone"
+        red "# No Route53 Hosted Zone found for $dnsZone"
         echo
-        echo "# To manually create the CNAME record, please use the following values:"
-        echo "Name: $validationName"
-        echo "Value: $validationValue"
-        echo "TTL: 300"
-        echo "Type: CNAME"
+        yellow "# To manually create the CNAME record, please use the following values:"
+        yellow "Name: $validationName"
+        yellow "Value: $validationValue"
+        yellow "TTL: 300"
+        yellow "Type: CNAME"
         echo
     fi
 }

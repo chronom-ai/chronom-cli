@@ -1,4 +1,4 @@
-echo "# Installing eksctl locally"
+yellow "# Installing eksctl locally"
 
 # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
 ARCH=amd64
@@ -10,4 +10,4 @@ tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
 
 sudo mv /tmp/eksctl /usr/local/bin
 
-echo "# Successfully installed eksctl locally"
+green "# Successfully installed eksctl locally"

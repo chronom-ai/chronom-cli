@@ -12,7 +12,7 @@ chronom_helm_install() {
     roleArn="${11}"
     namespace="${12}"
     ingressEnabled="${13}"
-    echo "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
+    yellow "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
     
     token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
     certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)

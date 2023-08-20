@@ -364,3 +364,7 @@ commands:
     Usage: eval "\$(./chronom-cli completions)"
   private: true
 
+- name: test
+  flags:
+  - long: --region
+    arg: region

@@ -1,7 +1,7 @@
-echo "# Creating a new EKS Cluster in the ${args[--region]} region"
-echo "# Cluster Name: ${args[--name]}"
-echo "# Cluster Version: ${args[--version]}"
-echo "# Cluster Initial NodeGroup Type: ${args[--node-type]}, minimum nodes: ${args[--min-nodes]}, maximum nodes: ${args[--max-nodes]}"
+yellow "# Creating a new EKS Cluster in the ${args[--region]} region"
+yellow "# Cluster Name: ${args[--name]}"
+yellow "# Cluster Version: ${args[--version]}"
+yellow "# Cluster Initial NodeGroup Type: ${args[--node-type]}, minimum nodes: ${args[--min-nodes]}, maximum nodes: ${args[--max-nodes]}"
 
 
 ## Parametrs normalization
