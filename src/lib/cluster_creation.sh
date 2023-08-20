@@ -78,6 +78,7 @@ EOF
 
 calicoClusterRole() {
     kubectl --server $endpoint --token $token --certificate-authority $pemFile create namespace tigera-operator
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo add projectcalico https://docs.tigera.io/calico/charts
     helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install calico projectcalico/tigera-operator --version v3.25.1 --namespace tigera-operator
   cat << EOF > append.yaml
 - apiGroups:
@@ -181,7 +182,7 @@ create_cluster_complete(){
     
     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
     
-    eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --node-private-networking --external-dns-access --region $region --alb-ingress-access
+    eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --node-private-networking --external-dns-access --region $region --alb-ingress-access --name $clusterName"-NodeGroup"
     green "# EKS NodeGroup created successfully"
     
     create_cluster_addons_bundle $clusterName $region

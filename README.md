@@ -8,7 +8,7 @@ It has since been expanded to allow for more general use cases.
 Chronom-cli is available as a single bash script. You can download it with the following command:
 
 ```bash
-curl -o https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/chronom-cli
+curl -O https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/chronom-cli
 chmod +x chronom-cli
 ```
 
@@ -36,6 +36,11 @@ Chronom-cli is built using [bashly](https://bashly.dannyb.co/), therefore you on
 More information about the installation of these tools can be found in the [advanced README](README_ADVANCED.md/#environment-setup-commands---highly-recommended).
 
 ---
+
+### Required flags `create chronom complete-deployment-eks`
+
+- `--name` - The name of the EKS cluster to create.
+- `--region` - The AWS region to create the EKS cluster in.
 
 ### Optional flags `create chronom complete-deployment-eks`
 
