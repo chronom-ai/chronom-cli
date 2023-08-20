@@ -33,10 +33,10 @@ fi
 
 yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
 read -s chronomAuthSecret
-while [ ${#chronomAuthSecret} -lt 120 ]
+while [ ${#chronomAuthSecret} -lt 127 ]
 do
     echo
-    red "Chronom Auth Secret should be at least 120 characters long"
+    red "Chronom Auth Secret must be 128 characters long"
     red "Please enter the Chronom Auth Secret that was provided to you: "
     read -s chronomAuthSecret
 done
@@ -60,10 +60,10 @@ echo
 
 yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
 read -s chronomRegistryPassword
-while [ ${#chronomRegistryPassword} -lt 5 ]
+while [ ${#chronomRegistryPassword} -lt 51 ]
 do
     echo
-    red "Chronom Registry Password must be at least 5 characters long"
+    red "Chronom Registry Password must be 52 characters long"
     red "Please enter the Chronom Registry Password that was provided to you: "
     read -s chronomRegistryPassword
 done
