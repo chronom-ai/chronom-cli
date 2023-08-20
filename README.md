@@ -138,3 +138,11 @@ chronom-cli create certificate-acm --dns-record <dns.record> --region <region>
 ##### Optional flags `create certificate-acm`
 
 - `--auto-validate` - Automatically attempt to locate a Route53 hosted zone and create a DNS record to validate the certificate request.
+
+### Sources / Acknowledgements
+
+- [bashly](https://bashly.dannyb.co/) - A bash CLI framework.
+- [eksctl](https://eksctl.io/) - A CLI for creating clusters on EKS.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) - A CLI for interacting with Kubernetes clusters.
+- [helm](https://helm.sh/) - A package manager for Kubernetes.
+- [AWS CLI](https://aws.amazon.com/cli/) - A CLI for interacting with AWS.
