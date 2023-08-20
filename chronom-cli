@@ -955,6 +955,7 @@ EOF
 
 calicoClusterRole() {
     kubectl --server $endpoint --token $token --certificate-authority $pemFile create namespace tigera-operator
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo add projectcalico https://docs.tigera.io/calico/charts
     helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install calico projectcalico/tigera-operator --version v3.25.1 --namespace tigera-operator
   cat << EOF > append.yaml
 - apiGroups:
@@ -1055,7 +1056,7 @@ create_cluster_complete(){
 
     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
 
-    eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --node-private-networking --external-dns-access --region $region --alb-ingress-access
+    eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --node-private-networking --external-dns-access --region $region --alb-ingress-access --name $clusterName"-NodeGroup"
     green "# EKS NodeGroup created successfully"
 
     create_cluster_addons_bundle $clusterName $region
@@ -1637,10 +1638,10 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
 
   yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
   read -s chronomAuthSecret
-  while [ ${#chronomAuthSecret} -lt 120 ]
+  while [ ${#chronomAuthSecret} -lt 127 ]
   do
       echo
-      red "Chronom Auth Secret should be at least 120 characters long"
+      red "Chronom Auth Secret must be 128 characters long"
       red "Please enter the Chronom Auth Secret that was provided to you: "
       read -s chronomAuthSecret
   done
@@ -1662,10 +1663,10 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
 
   yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
   read -s chronomRegistryPassword
-  while [ ${#chronomRegistryPassword} -lt 5 ]
+  while [ ${#chronomRegistryPassword} -lt 51 ]
   do
       echo
-      red "Chronom Registry Password must be at least 5 characters long"
+      red "Chronom Registry Password must be 52 characters long"
       red "Please enter the Chronom Registry Password that was provided to you: "
       read -s chronomRegistryPassword
   done
@@ -2017,7 +2018,7 @@ chronom_cli_create_parse_requirements() {
     deps['aws']="$(command -v aws | head -n1)"
   else
     printf "missing dependency: aws\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
   Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
     exit 1
   fi
@@ -2026,7 +2027,7 @@ chronom_cli_create_parse_requirements() {
     deps['kubectl']="$(command -v kubectl | head -n1)"
   else
     printf "missing dependency: kubectl\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
   Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
     exit 1
   fi
@@ -2035,7 +2036,7 @@ chronom_cli_create_parse_requirements() {
     deps['eksctl']="$(command -v eksctl | head -n1)"
   else
     printf "missing dependency: eksctl\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
   Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
     exit 1
   fi
@@ -2044,7 +2045,7 @@ chronom_cli_create_parse_requirements() {
     deps['helm']="$(command -v helm | head -n1)"
   else
     printf "missing dependency: helm\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup helm' to install helm - https://helm.sh/docs/intro/install/
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
   Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
     exit 1
   fi
@@ -2848,7 +2849,7 @@ chronom_cli_list_parse_requirements() {
     deps['aws']="$(command -v aws | head -n1)"
   else
     printf "missing dependency: aws\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
   Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
     exit 1
   fi
@@ -2857,7 +2858,7 @@ chronom_cli_list_parse_requirements() {
     deps['eksctl']="$(command -v eksctl | head -n1)"
   else
     printf "missing dependency: eksctl\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
   Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
     exit 1
   fi
@@ -2981,7 +2982,7 @@ chronom_cli_delete_parse_requirements() {
     deps['aws']="$(command -v aws | head -n1)"
   else
     printf "missing dependency: aws\n" >&2
-    printf "%s\n" "Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
   Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
     exit 1
   fi
