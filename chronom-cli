@@ -303,7 +303,7 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-version CHRONOM-VERSION")"
     printf "    The Chronom A.I. Version to install.\n    Defaults to the latest version at the time of release.\n"
-    printf "    Default: 0.1.2\n"
+    printf "    Default: 0.0.1\n"
     echo
 
     printf "  %s\n" "$(yellow "--chronom-namespace CHRONOM-NAMESPACE")"
@@ -2741,7 +2741,7 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
   [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="2"
   [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="10"
-  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.1.2"
+  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.1"
   [[ -n ${args['--chronom-namespace']:-} ]] || args['--chronom-namespace']="chronom"
   [[ -n ${args['--chronom-registry-name']:-} ]] || args['--chronom-registry-name']="chronomproddemoacr.azurecr.io"
 
