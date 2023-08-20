@@ -1,0 +1,370 @@
+name: chronom-cli
+help: Chronom A.I. Command Line Interface
+version: 0.0.1
+
+commands:
+- name: create
+  alias: c
+  help: Create Resources
+  dependencies:
+    aws: |-
+      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+    kubectl: |-
+      Please run 'chronom-cli setup kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+      Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+    eksctl: |-
+      Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+      Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+    helm: |-
+      Please run 'chronom-cli setup helm' to install helm - https://helm.sh/docs/intro/install/
+      Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/
+    curl: Please install curl - https://curl.se/download.html
+
+  commands:
+  ## Create a new EKS Cluster
+  - name: cluster-eks
+
+    help: Create a new EKS Cluster
+
+    flags:
+
+    - long: --name
+      short: -n
+      arg: name
+      required: true
+      help: The name of the EKS Cluster
+      completions:
+      - chronom-cluster
+
+    - long: --region
+      short: -r
+      arg: region
+      required: true
+      repeatable: false
+      help: The AWS region to use
+      validate: available_aws_region
+      completions:
+      - "eu-north-1"
+
+    - long: --create-rsa-key
+      help: Create an RSA key for the cluster (Overridden by --key-pair-name)
+      required: false
+      conflicts:
+      - "--key-pair-name"
+
+    - long: --key-pair-name
+      arg: key-pair-name
+      required: false
+      help: The name of the RSA key to use (if not provided, one will be generated)
+      conflicts:
+      - "--create-rsa-key"
+
+    - long: --node-type
+      arg: node-type
+      repeatable: false
+      help: The type of node to use
+      default: t3.small
+
+    - long: --min-nodes
+      arg: min-nodes
+      repeatable: false
+      help: The minimum number of nodes to use
+      default: "2"
+
+    - long: --max-nodes
+      arg: max-nodes
+      repeatable: false
+      help: The maximum number of nodes to use
+      default: "10"
+
+    - long: --version
+      short: -v
+      arg: version
+      repeatable: false
+      help: The Kubernetes version to use
+      default: "1.27"
+
+    - long: --skip-gp3-setup
+      help: Not Recommended - Skip the GP3 setup and use GP2
+      required: false
+
+    - long: --skip-calico-setup
+      help: Not Recommended - Skip the Calico setup
+      required: false
+
+  - name: chronom
+    ## Chronom Related Commands
+    help: Create a new Chronom Object
+
+    ## Create a new Chronom Read Only User
+    commands:
+    - name: user-iam
+      help: Create a new Chronom Read Only User
+
+      flags:
+
+      - long: --name
+        short: -n
+        arg: name
+        required: true
+        help: The name of the Chronom Read Only User to be created
+        validate: available_iam_user_role
+        completions:
+        - "chronom-readonly-user"
+
+    - name: complete-deployment-eks
+      ## Create a new Chronom Read Only User and EKS Cluster
+      help: |-
+        Creates a new EKS Cluster that is ready to use with Chronom A.I.
+        Creates a new Chronom Read Only User that is ready to use with Chronom A.I.
+        Creates a new Certificate Request in AWS ACM for the given domain name.
+      dependencies:
+        jq: Please install jq - https://stedolan.github.io/jq/download/
+
+      flags:
+      - long: --name
+        short: -n
+        arg: name
+        required: true
+        help: The name of the EKS Cluster that will be created
+        completions:
+        - "chronom-cluster"
+
+      - long: --region
+        short: -r
+        arg: region
+        required: true
+        repeatable: false
+        help: The AWS region where the EKS Cluster will be created
+        validate: available_aws_region
+        completions:
+        - "eu-north-1"
+
+      - long: --version
+        short: -v
+        arg: version
+        repeatable: false
+        help: The Kubernetes version to use
+        default: "1.27"
+
+      - long: --node-type
+        arg: node-type
+        repeatable: false
+        help: The type of node to use (see https://aws.amazon.com/ec2/instance-types/)
+        default: t3.small
+
+      - long: --chronom-readonly-username
+        arg: chronom-readonly-user
+        help: |-
+          The name of the Chronom Read Only User that will be created.
+          If not provided, will default to the name of the EKS Cluster with '-ro-user' appended.
+        required: false
+        validate: available_iam_user_role
+
+      - long: --create-rsa-key
+        help: Create an RSA key for the cluster (Overridden by --key-pair-name)
+        required: false
+        conflicts:
+        - "--key-pair-name"
+
+      - long: --key-pair-name
+        arg: key-pair-name
+        required: false
+        help: The name of the RSA key to use (if not provided, one will be generated)
+        conflicts:
+        - "--create-rsa-key"
+
+      - long: --min-nodes
+        arg: min-nodes
+        repeatable: false
+        help: The minimum number of nodes to use
+        default: "2"
+
+      - long: --max-nodes
+        arg: max-nodes
+        repeatable: false
+        help: The maximum number of nodes to use
+        default: "10"
+
+      - long: --skip-gp3-setup
+        help: Not Recommended - Skip the GP3 setup and use GP2
+        required: false
+
+      - long: --skip-calico-setup
+        help: Not Recommended - Skip the Calico setup
+        required: false
+
+      - long: --dns-record
+        short: -d
+        arg: dns-record
+        required: true
+        help: The domain name to create the certificate in AWS ACM for Chronom
+
+      - long: --auto-validate
+        required: false
+        help: |-
+          Recommended - Automatically create a DNS record in Route53 for the certificate validation.
+          This is recommended only if you are using Route53 for DNS.
+
+      - long: --chronom-registry-username
+        arg: chronom-registry-username
+        required: true
+        help: |-
+          The username for the Chronom A.I. Registry.
+          This value can be obtained from the Chronom A.I. Registration Email.
+
+      - long: --chronom-auth-id
+        arg: chronom-auth-id
+        required: true
+        help: |-
+          The Chronom A.I. Auth Client ID.
+          This value can be obtained from the Chronom A.I. Registration Email.
+
+      - long: --chronom-version
+        arg: chronom-version
+        default: 0.1.2
+        help: |-
+          The Chronom A.I. Version to install.
+          Defaults to the latest version at the time of release.
+
+      - long: --chronom-namespace
+        arg: chronom-namespace
+        default: chronom
+        help: |-
+          The Kubernetes Namespace to install Chronom A.I. into.
+          Defaults to 'chronom'.
+
+      - long: --chronom-registry-name
+        arg: chronom-registry-name
+        default: chronomproddemoacr.azurecr.io
+        help: |-
+          This value should only be set if instructed by Chronom A.I. support.
+
+      - long: --skip-ingress-setup
+        help: Not Recommended - Skip the Ingress setup
+        required: false
+
+      - long: --skip-certificate-setup
+        help: Not Recommended - Skip the Certificate setup
+        required: false
+        conflicts:
+        - "--auto-validate"
+
+      examples:
+      - chronom-cli create chronom complete-deployment-eks --name chronom-cluster --region eu-north-1 --dns-record <chronom-cluster.chronom.ai> --auto-validate --chronom-registry-username <chronom-registry-username> --chronom-auth-id <chronom-auth-id> --create-rsa-key
+
+  - name: certificate-acm
+    help: automatically creates an AWS ACM certificate for the given domain name, and optionally creates a DNS record in Route53 for the certificate validation
+
+    flags:
+    - long: --dns-record
+      short: -d
+      arg: dns-record
+      required: true
+      help: The domain name to create the certificate for
+
+    - long: --region
+      short: -r
+      arg: region
+      required: true
+      repeatable: false
+      help: |-
+        The AWS region to use.
+        If used for Chronom, must be the same region as the EKS Cluster.
+
+    - long: --auto-validate
+      required: false
+      help: |-
+        Automatically create a DNS record in Route53 for the certificate validation.
+        This is recommended only if you are using Route53 for DNS.
+
+- name: list
+  alias: l
+  help: List Resources
+  dependencies:
+    aws: |-
+      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+    eksctl: |-
+      Please run 'chronom-cli setup eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+      Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  commands:
+
+  - name: cluster-eks
+    help: List all EKS Clusters in a region
+
+    flags:
+    - long: --region
+      short: -r
+      arg: region
+      required: false
+      repeatable: false
+      help: The AWS region to use
+
+- name: delete
+  alias: d
+  help: Delete Resources
+  dependencies:
+    aws: |-
+      Please run 'chronom-cli setup awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+      Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+  commands:
+  - name: chronom
+    help: Delete a Chronom Object
+
+    commands:
+    - name: user-iam
+      help: Delete a Chronom Read Only User
+
+      flags:
+      - long: --name
+        short: -n
+        arg: name
+        required: true
+        help: The name of the Chronom Read Only User to be deleted
+
+- name: setup
+  alias: s
+  help: Setup shell environment
+
+  commands:
+  - name: auto-complete
+    help: Setup auto-complete for chronom-cli
+    flags:
+    - long: --update-bashrc
+      help: Update ~/.bashrc with auto-complete for chronom-cli
+      required: false
+  - name: install
+    help: Install dependencies
+    commands:
+    - name: awscli
+      help: Installs AWS CLI
+      dependencies:
+        curl: install curl - https://curl.se/download.html
+        unzip: install unzip - https://linuxize.com/post/how-to-install-and-use-unzip/
+    - name: kubectl
+      help: Installs kubectl
+      dependencies:
+        curl: install curl - https://curl.se/download.html
+        tar: install tar - https://linuxize.com/post/how-to-extract-unzip-tar-gz-file/
+        sudo: if you are already root, you should be ashamed of yourself!
+    - name: eksctl
+      help: Installs eksctl
+    - name: helm
+      help: Installs helm
+      dependencies:
+        curl: install curl - https://curl.se/download.html
+        openssl: install openssl - https://www.openssl.org/source/
+
+- name: completions
+  help: |-
+    Generate bash completions
+    Usage: eval "\$(./chronom-cli completions)"
+  private: true
+
+- name: test
+  flags:
+  - long: --region
+    arg: region
