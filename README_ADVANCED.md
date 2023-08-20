@@ -19,7 +19,7 @@ This will allow you to use tab completion for chronom-cli commands as well as ru
 ### Install chronom-cli dependencies
 
 The command will install the selected dependency on the local machine.  
-:warning: Note that currently the command does not check if the dependency is already installed.
+:warning: Note: currently the command does not check if the dependency is already installed.
 
 ```bash
 chronom-cli setup install <dependency>
@@ -46,7 +46,7 @@ example use cases are mainly:
 chronom-cli create chronom user-iam --name <user_name>
 ```
 
-#### Details
+#### Details - `create chronom user-iam`
 
 The command will create a new IAM user with two permissions:
 
@@ -86,13 +86,13 @@ chronom-cli create cluster-eks --name <cluster_name> --region <cluster_region> -
 - `--skip-gp3-setup` - Skip the setup of the GP3 storage class (Not recommended).
 - `--skip-calico-setup` - Skip the setup of the Calico CNI (Not recommended).
 
-#### Example
+#### Example - `create cluster-eks`
 
 ```bash
 chronom-cli create cluster-eks --name chronom-cluster --region us-east-1 --create-rsa-key
 ```
 
-#### Details
+#### Details - `create cluster-eks`
 
 The command will create a new EKS cluster in the specified region with the specified name.  
 The command will also create a new RSA key pair and store it in the `~/.ssh` directory.
