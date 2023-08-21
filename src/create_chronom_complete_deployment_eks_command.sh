@@ -132,6 +132,8 @@ if [ ! ${args[--skip-ingress-setup]} ]; then
     green "# Completed"
 fi
 
+green "# Please stend by while Chronom is being deployed"
+sleep 120
 
 green_bold "# Congratulations! Your Chronom cluster is ready to use"
 green_bold "# You can access Chronom at https://$dnsRecord"
