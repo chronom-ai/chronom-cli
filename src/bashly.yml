@@ -326,6 +326,21 @@ commands:
         required: true
         help: The name of the Chronom Read Only User to be deleted
 
+    - name: cluster-eks
+      help: Delete an EKS Cluster as well as the Admin Role
+      flags:
+      - long: --name
+        short: -n
+        arg: name
+        required: true
+        help: The name of the EKS Cluster to be deleted
+      - long: --region
+        short: -r
+        arg: region
+        required: true
+        repeatable: false
+        help: The AWS region to use
+
 - name: setup
   alias: s
   help: Setup shell environment
@@ -365,6 +380,33 @@ commands:
       tar: install tar - https://linuxize.com/post/how-to-extract-unzip-tar-gz-file/
       unzip: install unzip - https://linuxize.com/post/how-to-install-and-use-unzip/
       sudo: if you are already root, you should be ashamed of yourself!
+
+- name: configure
+  help: Configure resources using chronom-cli
+  commands:
+  - name: chronom
+    help: Configure an Object to use Chronom A.I.
+    commands:
+    - name: additional-cluster-eks
+      help: Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server
+      flags:
+      - long: --cluster-name
+        help: The name of the cluster to configure
+        arg: cluster-name
+        required: true
+        repeatable: false
+      - long: --region
+        arg: region
+        help: The AWS region where the cluster is located
+        required: true
+        repeatable: false
+      - long: --chronom-readonly-username
+        arg: chronom-readonly-user
+        help: |-
+          The name of the Chronom Read Only User to configure.
+          Usually this is the name of the cluster with '-ro-user' appended.
+        required: true
+        repeatable: false
 
 - name: completions
 

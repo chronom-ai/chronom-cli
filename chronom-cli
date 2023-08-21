@@ -29,10 +29,11 @@ chronom_cli_usage() {
   echo
 
   printf "%s\n" "$(bold "Commands:")"
-  printf "  %s   Create Resources\n" "$(green "create")"
-  printf "  %s   List Resources\n" "$(green "list")  "
-  printf "  %s   Delete Resources\n" "$(green "delete")"
-  printf "  %s   Setup shell environment\n" "$(green "setup") "
+  printf "  %s   Create Resources\n" "$(green "create")   "
+  printf "  %s   List Resources\n" "$(green "list")     "
+  printf "  %s   Delete Resources\n" "$(green "delete")   "
+  printf "  %s   Setup shell environment\n" "$(green "setup")    "
+  printf "  %s   Configure resources using chronom-cli\n" "$(green "configure")"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -485,7 +486,8 @@ chronom_cli_delete_chronom_usage() {
   echo
 
   printf "%s\n" "$(bold "Commands:")"
-  printf "  %s   Delete a Chronom Read Only User\n" "$(green "user-iam")"
+  printf "  %s   Delete a Chronom Read Only User\n" "$(green "user-iam")   "
+  printf "  %s   Delete an EKS Cluster as well as the Admin Role\n" "$(green "cluster-eks")"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -519,6 +521,40 @@ chronom_cli_delete_chronom_user_iam_usage() {
 
     printf "  %s\n" "$(yellow "--name, -n NAME (required)")"
     printf "    The name of the Chronom Read Only User to be deleted\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_delete_chronom_cluster_eks_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli delete chronom cluster-eks - Delete an EKS Cluster as well as the Admin Role\n"
+    echo
+
+  else
+    printf "chronom-cli delete chronom cluster-eks - Delete an EKS Cluster as well as the Admin Role\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli delete chronom cluster-eks [OPTIONS]\n"
+  printf "  chronom-cli delete chronom cluster-eks --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--name, -n NAME (required)")"
+    printf "    The name of the EKS Cluster to be deleted\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--region, -r REGION (required)")"
+    printf "    The AWS region to use\n"
     echo
 
     printf "  %s\n" "$(yellow "--help, -h")"
@@ -748,6 +784,104 @@ chronom_cli_setup_cloudshell_usage() {
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_configure_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli configure - Configure resources using chronom-cli\n"
+    echo
+
+  else
+    printf "chronom-cli configure - Configure resources using chronom-cli\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli configure COMMAND\n"
+  printf "  chronom-cli configure [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Configure an Object to use Chronom A.I.\n" "$(green "chronom")"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_configure_chronom_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli configure chronom - Configure an Object to use Chronom A.I.\n"
+    echo
+
+  else
+    printf "chronom-cli configure chronom - Configure an Object to use Chronom A.I.\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli configure chronom COMMAND\n"
+  printf "  chronom-cli configure chronom [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server\n" "$(green "additional-cluster-eks")"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_configure_chronom_additional_cluster_eks_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli configure chronom additional-cluster-eks - Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server\n"
+    echo
+
+  else
+    printf "chronom-cli configure chronom additional-cluster-eks - Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli configure chronom additional-cluster-eks [OPTIONS]\n"
+  printf "  chronom-cli configure chronom additional-cluster-eks --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--cluster-name CLUSTER-NAME (required)")"
+    printf "    The name of the cluster to configure\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--region REGION (required)")"
+    printf "    The AWS region where the cluster is located\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USER (required)")"
+    printf "    The name of the Chronom Read Only User to configure.\n    Usually this is the name of the cluster with '-ro-user' appended.\n"
+    echo
 
     printf "  %s\n" "$(yellow "--help, -h")"
     printf "    Show this help\n"
@@ -1432,6 +1566,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure chronom additional-cluster-eks\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--chronom-readonly-username --cluster-name --help --region -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'create chronom complete-deployment-eks\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --skip-calico-setup --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
@@ -1458,6 +1596,10 @@ send_completions() {
   echo $''
   echo $'    \'create chronom user-iam\'*\'-n\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-readonly-user")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'delete chronom cluster-eks\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name --region -h -n -r")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create cluster-eks\'*\'--name\')'
@@ -1494,6 +1636,10 @@ send_completions() {
   echo $''
   echo $'    \'c chronom user-iam\'*\'-n\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-readonly-user")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'d chronom cluster-eks\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name --region -h -n -r")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'setup install kubectl\'*)'
@@ -1540,6 +1686,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure chronom\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h additional-cluster-eks")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'c cluster-eks\'*\'-n\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
   echo $'      ;;'
@@ -1573,7 +1723,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'delete chronom\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h user-iam")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h cluster-eks user-iam")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'s install helm\'*)'
@@ -1601,11 +1751,15 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'d chronom\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h user-iam")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h cluster-eks user-iam")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'s install\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h awscli eksctl helm kubectl")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create\'*)'
@@ -1641,7 +1795,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    *)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --version -h -v c create d delete l list s setup")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --version -h -v c configure create d delete l list s setup")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'  esac'
@@ -1940,6 +2094,25 @@ chronom_cli_delete_chronom_user_iam_command() {
   green "# Successfull deleted user $userName and role $roleName"
 }
 
+chronom_cli_delete_chronom_cluster_eks_command() {
+  yellow "# Deleting cluster ${args[--name]} in region ${args[--region]}"
+  eksctl delete cluster --name ${args[--name]} --region ${args[--region]} || red "Cluster not found"
+  green "# Successfull deleted cluster ${args[--name]} in region ${args[--region]}"
+  yellow "# Deleting Admin Role ${args[--name]}-AdminRole"
+  roleName="${args[--name]}-AdminRole"
+  accountId=$(aws sts get-caller-identity --query 'Account' --output text)
+  rolePolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/${roleName}Policy" --query 'Policy.Arn' --output text) || red "Role Policy not found"
+
+  aws iam detach-role-policy --role-name $roleName --policy-arn $rolePolicyArn || red "Admin Role not found"
+
+  aws iam delete-policy --policy-arn $rolePolicyArn || red "Admin Role Policy not found"
+
+  aws iam delete-role --role-name $roleName || red "Admin Role not found"
+
+  green "# Successfull deleted Admin Role ${args[--name]}-AdminRole"
+  green "# Deletion of cluster ${args[--name]} in region ${args[--region]} completed successfully"
+}
+
 chronom_cli_setup_auto_complete_command() {
   yellow "# To configure auto complete for chronom-cli, please run the following command:"
 
@@ -1996,6 +2169,18 @@ chronom_cli_setup_cloudshell_command() {
   install_helm
 
   green "# Successfully configured AWS CloudShell with the required dependencies"
+}
+
+chronom_cli_configure_chronom_additional_cluster_eks_command() {
+  yellow "# Adding ${args[--chronom-readonly-username]} to ${args[--cluster-name]} in ${args[--region]} region"
+
+  clusterName=${args[--cluster-name]}
+  region=${args[--region]}
+  chronomReadonlyUsername=${args[--chronom-readonly-username]}
+
+  chronomReadonlyClusterRole $clusterName $region $chronomReadonlyUsername
+
+  green "# Done, You can now Scan the cluster with Chronom"
 }
 
 chronom_cli_completions_command() {
@@ -2062,6 +2247,13 @@ parse_requirements() {
       action="setup"
       shift
       chronom_cli_setup_parse_requirements "$@"
+      shift $#
+      ;;
+
+    configure)
+      action="configure"
+      shift
+      chronom_cli_configure_parse_requirements "$@"
       shift $#
       ;;
 
@@ -3174,6 +3366,13 @@ chronom_cli_delete_chronom_parse_requirements() {
       shift $#
       ;;
 
+    cluster-eks)
+      action="cluster-eks"
+      shift
+      chronom_cli_delete_chronom_cluster_eks_parse_requirements "$@"
+      shift $#
+      ;;
+
     "")
       chronom_cli_delete_chronom_usage >&2
       exit 1
@@ -3260,6 +3459,81 @@ chronom_cli_delete_chronom_user_iam_parse_requirements() {
 
   if [[ -z ${args['--name']+x} ]]; then
     printf "missing required flag: --name, -n NAME\n" >&2
+    exit 1
+  fi
+
+}
+
+chronom_cli_delete_chronom_cluster_eks_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_delete_chronom_cluster_eks_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="delete chronom cluster-eks"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --name | -n)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--name requires an argument: --name, -n NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --region | -r)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--region']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--region requires an argument: --region, -r REGION" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['--name']+x} ]]; then
+    printf "missing required flag: --name, -n NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--region']+x} ]]; then
+    printf "missing required flag: --region, -r REGION\n" >&2
     exit 1
   fi
 
@@ -3758,6 +4032,222 @@ chronom_cli_setup_cloudshell_parse_requirements() {
 
 }
 
+chronom_cli_configure_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_configure_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    chronom)
+      action="chronom"
+      shift
+      chronom_cli_configure_chronom_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      chronom_cli_configure_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+chronom_cli_configure_chronom_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_configure_chronom_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    additional-cluster-eks)
+      action="additional-cluster-eks"
+      shift
+      chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      chronom_cli_configure_chronom_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_configure_chronom_additional_cluster_eks_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="configure chronom additional-cluster-eks"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --cluster-name)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--cluster-name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--cluster-name requires an argument: --cluster-name CLUSTER-NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --region)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--region']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--region requires an argument: --region REGION" >&2
+          exit 1
+        fi
+        ;;
+
+      --chronom-readonly-username)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--chronom-readonly-username']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--chronom-readonly-username requires an argument: --chronom-readonly-username CHRONOM-READONLY-USER" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['--cluster-name']+x} ]]; then
+    printf "missing required flag: --cluster-name CLUSTER-NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--region']+x} ]]; then
+    printf "missing required flag: --region REGION\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--chronom-readonly-username']+x} ]]; then
+    printf "missing required flag: --chronom-readonly-username CHRONOM-READONLY-USER\n" >&2
+    exit 1
+  fi
+
+}
+
 chronom_cli_completions_parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -3825,6 +4315,7 @@ run() {
     "delete") chronom_cli_delete_command ;;
     "delete chronom") chronom_cli_delete_chronom_command ;;
     "delete chronom user-iam") chronom_cli_delete_chronom_user_iam_command ;;
+    "delete chronom cluster-eks") chronom_cli_delete_chronom_cluster_eks_command ;;
     "setup") chronom_cli_setup_command ;;
     "setup auto-complete") chronom_cli_setup_auto_complete_command ;;
     "setup install") chronom_cli_setup_install_command ;;
@@ -3833,6 +4324,9 @@ run() {
     "setup install eksctl") chronom_cli_setup_install_eksctl_command ;;
     "setup install helm") chronom_cli_setup_install_helm_command ;;
     "setup cloudshell") chronom_cli_setup_cloudshell_command ;;
+    "configure") chronom_cli_configure_command ;;
+    "configure chronom") chronom_cli_configure_chronom_command ;;
+    "configure chronom additional-cluster-eks") chronom_cli_configure_chronom_additional_cluster_eks_command ;;
     "completions") chronom_cli_completions_command ;;
   esac
 }
