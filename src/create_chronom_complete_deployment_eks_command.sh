@@ -136,4 +136,5 @@ green "# Please stend by while Chronom is being deployed"
 sleep 120
 
 green_bold "# Congratulations! Your Chronom cluster is ready to use"
+green_bold "# If ever needed, an IAM Role $clusterName-AdminRole was created with Administrator Access to the Cluster API Server"
 green_bold "# You can access Chronom at https://$dnsRecord"

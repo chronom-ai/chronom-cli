@@ -1041,7 +1041,7 @@ create_cluster_complete(){
     yellow "# Creating a new IAM Role with Admin Access for the Kubernetes API Server"
     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
     adminRoleArn=$(aws iam create-role --role-name $clusterName"-AdminRole" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}"  --query "Role.Arn" --output text)
-    adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
+    adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\",\"eks:DescribeCluster\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
     aws iam attach-role-policy --role-name $clusterName"-AdminRole" --policy-arn $adminRolePolicyArn
     eksctl create iamidentitymapping --cluster $clusterName --region $region --arn $adminRoleArn --group system:masters --username admin
     green "# IAM Role with Admin Access for the Kubernetes API Server created successfully"
@@ -1858,7 +1858,9 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   sleep 120
 
   green_bold "# Congratulations! Your Chronom cluster is ready to use"
+  green_bold "# If ever needed, an IAM Role $clusterName-AdminRole was created with Administrator Access to the Cluster API Server"
   green_bold "# You can access Chronom at https://$dnsRecord"
+
 }
 
 chronom_cli_create_certificate_acm_command() {
