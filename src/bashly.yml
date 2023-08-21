@@ -357,14 +357,17 @@ commands:
       dependencies:
         curl: install curl - https://curl.se/download.html
         openssl: install openssl - https://www.openssl.org/source/
+  - name: cloudshell
+    help: Setup cloudshell environment with all dependencies for chronom-cli
+    dependencies:
+      curl: install curl - https://curl.se/download.html
+      tar: install tar - https://linuxize.com/post/how-to-extract-unzip-tar-gz-file/
+      unzip: install unzip - https://linuxize.com/post/how-to-install-and-use-unzip/
+      sudo: if you are already root, you should be ashamed of yourself!
 
 - name: completions
+
   help: |-
     Generate bash completions
     Usage: eval "\$(./chronom-cli completions)"
   private: true
-
-- name: test
-  flags:
-  - long: --region
-    arg: region

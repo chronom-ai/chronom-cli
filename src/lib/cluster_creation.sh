@@ -5,6 +5,7 @@ create_rsa_key_pair() {
     
     ## Check if key pair name is available
     check_available_key_pair_name $clusterName-KeyPair $region
+    mkdir -p ~/.ssh
     aws ec2 create-key-pair --key-name $clusterName-KeyPair --region $region --query "KeyMaterial" --output text > ~/.ssh/$clusterName-KeyPair.pem
     sshKeysFlags="--ssh-access --ssh-public-key $clusterName-KeyPair"
 }
