@@ -66,6 +66,18 @@ More information about the installation of these tools can be found in the [adva
 
 The example above will create a new EKS cluster in the `us-east-1` region with the name `chronom-cluster` and will create a new RSA key pair and store it in the `~/.ssh` directory as well as create a new DNS record in Route53 for `chronom.example.com` and validate the certificate request for the same record.
 
+## Configure Additional Clusters
+
+This will create a new Kubernetes Read Only Role and Bind it to the IAM ReadOnly User that was created during the initial deployment.
+
+```bash
+./chronom-cli configure chronom additional-cluster-eks --cluster-name <Name_Of_Cluster> --region <Region_Of_Cluster> --chronom-readonly-username <Chronom_ReadOnly_Username>
+```
+
+(By Default, the Chronom_ReadOnly_Username is the name of the chronom cluster with `-ro-user` appended to the end of it)
+
+---
+
 ### Acknowledgements
 
 - [bashly](https://bashly.dannyb.co/) - A bash CLI framework.

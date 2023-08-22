@@ -1,5 +1,1 @@
-yellow "# Installing AWS CLI locally"
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-green "# Successfully installed AWS CLI locally"
+install_aws_cli

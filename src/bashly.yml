@@ -200,6 +200,7 @@ commands:
         arg: dns-record
         required: true
         help: The domain name to create the certificate in AWS ACM for Chronom
+        validate: available_dns_record
 
       - long: --auto-validate
         required: false
@@ -223,7 +224,7 @@ commands:
 
       - long: --chronom-version
         arg: chronom-version
-        default: 0.1.2
+        default: 0.0.1
         help: |-
           The Chronom A.I. Version to install.
           Defaults to the latest version at the time of release.
@@ -237,7 +238,7 @@ commands:
 
       - long: --chronom-registry-name
         arg: chronom-registry-name
-        default: chronomproddemoacr.azurecr.io
+        default: chronomprodacr.azurecr.io
         help: |-
           This value should only be set if instructed by Chronom A.I. support.
 
@@ -325,6 +326,21 @@ commands:
         required: true
         help: The name of the Chronom Read Only User to be deleted
 
+    - name: cluster-eks
+      help: Delete an EKS Cluster as well as the Admin Role
+      flags:
+      - long: --name
+        short: -n
+        arg: name
+        required: true
+        help: The name of the EKS Cluster to be deleted
+      - long: --region
+        short: -r
+        arg: region
+        required: true
+        repeatable: false
+        help: The AWS region to use
+
 - name: setup
   alias: s
   help: Setup shell environment
@@ -357,14 +373,44 @@ commands:
       dependencies:
         curl: install curl - https://curl.se/download.html
         openssl: install openssl - https://www.openssl.org/source/
+  - name: cloudshell
+    help: Setup cloudshell environment with all dependencies for chronom-cli
+    dependencies:
+      curl: install curl - https://curl.se/download.html
+      tar: install tar - https://linuxize.com/post/how-to-extract-unzip-tar-gz-file/
+      unzip: install unzip - https://linuxize.com/post/how-to-install-and-use-unzip/
+      sudo: if you are already root, you should be ashamed of yourself!
+
+- name: configure
+  help: Configure resources using chronom-cli
+  commands:
+  - name: chronom
+    help: Configure an Object to use Chronom A.I.
+    commands:
+    - name: additional-cluster-eks
+      help: Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server
+      flags:
+      - long: --cluster-name
+        help: The name of the cluster to configure
+        arg: cluster-name
+        required: true
+        repeatable: false
+      - long: --region
+        arg: region
+        help: The AWS region where the cluster is located
+        required: true
+        repeatable: false
+      - long: --chronom-readonly-username
+        arg: chronom-readonly-username
+        help: |-
+          The name of the Chronom Read Only User to configure.
+          Usually this is the name of the cluster with '-ro-user' appended.
+        required: true
+        repeatable: false
 
 - name: completions
+
   help: |-
     Generate bash completions
     Usage: eval "\$(./chronom-cli completions)"
   private: true
-
-- name: test
-  flags:
-  - long: --region
-    arg: region

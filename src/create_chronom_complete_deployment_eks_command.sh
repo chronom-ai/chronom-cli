@@ -41,18 +41,18 @@ do
     read -s chronomAuthSecret
 done
 
-chronomAuthSecretLength=${#chronomAuthSecret}
-chronomAuthMasked=$(printf '*%.0s' $(seq 1 $((chronomAuthSecretLength - 4))))
-magenta_underlined "\n Chronom Auth Secret: ${chronomAuthSecret:0:2}${chronomAuthMasked}${chronomAuthSecret: -2}"
-magenta_underlined "Chronom Auth Secret length: ${#chronomAuthSecret}"
-magenta_underlined "Is this correct? (y/n)"
-read authAnswer
-if [ "$authAnswer" != "${authAnswer#[Yy]}" ] ;then
-    green "Continuing..."
-else
-    red_bold "Exiting..."
-    exit 1
-fi
+# # chronomAuthSecretLength=${#chronomAuthSecret}
+# # chronomAuthMasked=$(printf '*%.0s' $(seq 1 $((chronomAuthSecretLength - 4))))
+# # cyan_underlined "\n Chronom Auth Secret: ${chronomAuthSecret:0:2}${chronomAuthMasked}${chronomAuthSecret: -2}"
+# # cyan_underlined "Chronom Auth Secret length: ${#chronomAuthSecret}"
+# # cyan_underlined "Is this correct? (y/n)"
+# # read authAnswer
+# # if [ "$authAnswer" != "${authAnswer#[Yy]}" ] ;then
+# #     green "Continuing..."
+# # else
+# #     red_bold "Exiting..."
+# #     exit 1
+# # fi
 
 echo
 
@@ -68,20 +68,20 @@ do
     read -s chronomRegistryPassword
 done
 
-chronomRegistryPasswordLength=${#chronomRegistryPassword}
-chronomRegistryMasked=$(printf '*%.0s' $(seq 1 $((chronomRegistryPasswordLength - 4))))
+# # chronomRegistryPasswordLength=${#chronomRegistryPassword}
+# # chronomRegistryMasked=$(printf '*%.0s' $(seq 1 $((chronomRegistryPasswordLength - 4))))
 
-magenta_underlined "\n Chronom Registry Password: ${chronomRegistryPassword:0:2}${chronomRegistryMasked}${chronomRegistryPassword: -2}"
-magenta_underlined "Chronom Registry Password length: ${#chronomRegistryPassword}"
-magenta_underlined "Is this correct? (y/n)"
-read registryAnswer
-if [ "$registryAnswer" != "${registryAnswer#[Yy]}" ] ;then
-    green "Continuing..."
-else
-    red_bold "Exiting..."
-    exit 1
-fi
-echo
+# # cyan_underlined "\n Chronom Registry Password: ${chronomRegistryPassword:0:2}${chronomRegistryMasked}${chronomRegistryPassword: -2}"
+# # cyan_underlined "Chronom Registry Password length: ${#chronomRegistryPassword}"
+# # cyan_underlined "Is this correct? (y/n)"
+# # read registryAnswer
+# # if [ "$registryAnswer" != "${registryAnswer#[Yy]}" ] ;then
+# #     green "Continuing..."
+# # else
+# #     red_bold "Exiting..."
+# #     exit 1
+# # fi
+# # echo
 
 ## Create a fully functional cluster tailored for Chronom
 create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $accountId
@@ -132,6 +132,9 @@ if [ ! ${args[--skip-ingress-setup]} ]; then
     green "# Completed"
 fi
 
+green "# Please stend by while Chronom is being deployed"
+sleep 120
 
 green_bold "# Congratulations! Your Chronom cluster is ready to use"
+green_bold "# If ever needed, an IAM Role $clusterName-AdminRole was created with Administrator Access to the Cluster API Server"
 green_bold "# You can access Chronom at https://$dnsRecord"
