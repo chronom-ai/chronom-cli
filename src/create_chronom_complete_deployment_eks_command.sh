@@ -11,7 +11,7 @@ nodeType=${args[--node-type]}
 minNodes=${args[--min-nodes]}
 maxNodes=${args[--max-nodes]}
 dnsRecord=${args[--dns-record]}
-chronomRegistryUsername=${args[--chronom-registry-username]}
+# chronomRegistryUsername=${args[--chronom-registry-username]}
 chronomAuthId=${args[--chronom-auth-id]}
 chronomVersion=${args[--chronom-version]}
 chronomRegistry=${args[--chronom-registry-name]}
@@ -30,6 +30,13 @@ if [ ${args[--skip-ingress-setup]} ]; then
 else
     ingressEnabled=true
 fi
+
+if [ ${args[--chronom-registry-username]} ]; then
+    chronomRegistryUsername=${args[--chronom-registry-username]}
+else
+    chronomRegistryUsername=org-$chronomAuthId
+fi
+
 
 yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
 read -s chronomAuthSecret

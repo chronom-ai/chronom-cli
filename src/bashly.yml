@@ -210,7 +210,7 @@ commands:
 
       - long: --chronom-registry-username
         arg: chronom-registry-username
-        required: true
+        required: false
         help: |-
           The username for the Chronom A.I. Registry.
           This value can be obtained from the Chronom A.I. Registration Email.
