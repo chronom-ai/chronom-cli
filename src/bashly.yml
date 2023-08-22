@@ -401,7 +401,7 @@ commands:
         required: true
         repeatable: false
       - long: --chronom-readonly-username
-        arg: chronom-readonly-user
+        arg: chronom-readonly-username
         help: |-
           The name of the Chronom Read Only User to configure.
           Usually this is the name of the cluster with '-ro-user' appended.

@@ -879,7 +879,7 @@ chronom_cli_configure_chronom_additional_cluster_eks_usage() {
     printf "    The AWS region where the cluster is located\n"
     echo
 
-    printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USER (required)")"
+    printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USERNAME (required)")"
     printf "    The name of the Chronom Read Only User to configure.\n    Usually this is the name of the cluster with '-ro-user' appended.\n"
     echo
 
@@ -4213,7 +4213,7 @@ chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
           shift
           shift
         else
-          printf "%s\n" "--chronom-readonly-username requires an argument: --chronom-readonly-username CHRONOM-READONLY-USER" >&2
+          printf "%s\n" "--chronom-readonly-username requires an argument: --chronom-readonly-username CHRONOM-READONLY-USERNAME" >&2
           exit 1
         fi
         ;;
@@ -4242,7 +4242,7 @@ chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
     exit 1
   fi
   if [[ -z ${args['--chronom-readonly-username']+x} ]]; then
-    printf "missing required flag: --chronom-readonly-username CHRONOM-READONLY-USER\n" >&2
+    printf "missing required flag: --chronom-readonly-username CHRONOM-READONLY-USERNAME\n" >&2
     exit 1
   fi
 

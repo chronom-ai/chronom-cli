@@ -65,6 +65,15 @@ The command will delete the IAM user created by the `create chronom user-iam` co
 chronom-cli delete chronom user-iam --name <user_name>
 ```
 
+### Delete a Chronom Cluster (For Advanced use cases)
+
+**:warning: This Command is irreversible and will lead to data loss along with anything else deployed in the cluster**  
+The command will delete the Chronom cluster created by the `create chronom complete-deployment-eks` command along with all the resources created by the command (Except to the RSA KeyPair in case it is being used somewhere else).
+
+```bash
+chronom-cli delete chronom cluster-eks --name <cluster_name> --region <cluster_region>
+```
+
 ## General commands
 
 ### Create a new EKS Cluster on AWS
