@@ -11,7 +11,6 @@ nodeType=${args[--node-type]}
 minNodes=${args[--min-nodes]}
 maxNodes=${args[--max-nodes]}
 dnsRecord=${args[--dns-record]}
-# chronomRegistryUsername=${args[--chronom-registry-username]}
 chronomAuthId=${args[--chronom-auth-id]}
 chronomVersion=${args[--chronom-version]}
 chronomRegistry=${args[--chronom-registry-name]}
