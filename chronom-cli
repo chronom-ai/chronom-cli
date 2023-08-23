@@ -34,6 +34,7 @@ chronom_cli_usage() {
   printf "  %s   Delete Resources\n" "$(green "delete")   "
   printf "  %s   Setup shell environment\n" "$(green "setup")    "
   printf "  %s   Configure resources using chronom-cli\n" "$(green "configure")"
+  printf "  %s   Upgrade Resources\n" "$(green "upgrade")  "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -809,7 +810,8 @@ chronom_cli_configure_usage() {
   echo
 
   printf "%s\n" "$(bold "Commands:")"
-  printf "  %s   Configure an Object to use Chronom A.I.\n" "$(green "chronom")"
+  printf "  %s   Configure an Object to use Chronom A.I.\n" "$(green "chronom")     "
+  printf "  %s   Configure the current Kubernetes context to use Chronom A.I.\n" "$(green "kube-context")"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -881,6 +883,120 @@ chronom_cli_configure_chronom_additional_cluster_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USERNAME (required)")"
     printf "    The name of the Chronom Read Only User to configure.\n    Usually this is the name of the cluster with '-ro-user' appended.\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_configure_kube_context_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli configure kube-context - Configure the current Kubernetes context to use Chronom A.I.\n"
+    echo
+
+  else
+    printf "chronom-cli configure kube-context - Configure the current Kubernetes context to use Chronom A.I.\n"
+    echo
+
+  fi
+
+  printf "Alias: k\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli configure kube-context [OPTIONS]\n"
+  printf "  chronom-cli configure kube-context --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--name, -n NAME (required)")"
+    printf "    The name of the EKS Cluster to configure\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--region, -r REGION (required)")"
+    printf "    The AWS region where the EKS Cluster is located\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--use-admin-role")"
+    printf "    Only for Chronom Cluster - Use the Admin Role to configure the Kubernetes\n    context\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_upgrade_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli upgrade - Upgrade Resources\n"
+    echo
+
+  else
+    printf "chronom-cli upgrade - Upgrade Resources\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli upgrade COMMAND\n"
+  printf "  chronom-cli upgrade [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Upgrade Chronom Version\n" "$(green "chronom")"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_upgrade_chronom_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli upgrade chronom - Upgrade Chronom Version\n"
+    echo
+
+  else
+    printf "chronom-cli upgrade chronom - Upgrade Chronom Version\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli upgrade chronom [OPTIONS]\n"
+  printf "  chronom-cli upgrade chronom --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--version, -v VERSION (required)")"
+    printf "    The Chronom A.I. Version to upgrade to\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--cluster-name, -n CLUSTER-NAME (required)")"
+    printf "    The name of the EKS Cluster where chronom is installed - usually\n    chronom-cluster\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--region, -r REGION (required)")"
+    printf "    The AWS region where the EKS Cluster is located\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--namespace NAMESPACE")"
+    printf "    Namespace where chronom is installed - usually chronom\n"
+    printf "    Default: chronom\n"
     echo
 
     printf "  %s\n" "$(yellow "--help, -h")"
@@ -1586,8 +1702,20 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --skip-calico-setup --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure kube-context\'*\'--region\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'create chronom user-iam\'*\'--name\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-readonly-user")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom\'*\'--cluster-name\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure kube-context\'*\'--name\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create cluster-eks\'*\'--region\')'
@@ -1610,6 +1738,18 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-readonly-user")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure kube-context\'*\'-n\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure kube-context\'*\'-r\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom\'*\'--region\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'create chronom user-iam\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name -h -n")" -- "$cur" )'
   echo $'      ;;'
@@ -1624,6 +1764,10 @@ send_completions() {
   echo $''
   echo $'    \'create certificate-acm\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --dns-record --help --region -d -h -r")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure kube-context\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name --region --use-admin-role -h -n -r")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create cluster-eks\'*\'-n\')'
@@ -1658,6 +1802,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure k\'*\'--region\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'setup auto-complete\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --update-bashrc -h")" -- "$cur" )'
   echo $'      ;;'
@@ -1676,6 +1824,18 @@ send_completions() {
   echo $''
   echo $'    \'setup install helm\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure k\'*\'--name\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom\'*\'-n\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom\'*\'-r\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c certificate-acm\'*)'
@@ -1718,6 +1878,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --update-bashrc -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'upgrade chronom\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--cluster-name --help --namespace --region --version -h -n -r -v")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'create chronom\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h complete-deployment-eks user-iam")" -- "$cur" )'
   echo $'      ;;'
@@ -1728,6 +1892,14 @@ send_completions() {
   echo $''
   echo $'    \'s install helm\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure k\'*\'-n\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'configure k\'*\'-r\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c cluster-eks\'*)'
@@ -1746,6 +1918,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'configure k\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name --region --use-admin-role -h -n -r")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'c chronom\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h complete-deployment-eks user-iam")" -- "$cur" )'
   echo $'      ;;'
@@ -1759,6 +1935,10 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'configure\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom k kube-context")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom")" -- "$cur" )'
   echo $'      ;;'
   echo $''
@@ -1795,7 +1975,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    *)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --version -h -v c configure create d delete l list s setup")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --version -h -v c configure create d delete l list s setup upgrade")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'  esac'
@@ -2188,6 +2368,54 @@ chronom_cli_configure_chronom_additional_cluster_eks_command() {
   green "# Done, You can now Scan the cluster with Chronom"
 }
 
+chronom_cli_configure_kube_context_command() {
+  yellow "# Configuring Local Kubectl Context to use the Cluster ${args[--name]} in the region ${args[--region]}"
+
+  clusterName=${args[--name]}
+  region=${args[--region]}
+
+  if [ -z "${args[--use-admin-role]}" ]; then
+      yellow "# Using the Admin role $clusterName-AdminRole"
+      adminRoleArn=$(aws iam get-role --role-name $clusterName-AdminRole --query 'Role.Arn' --output text)
+      yellow "# Updating kubeconfig"
+      eksctl utils write-kubeconfig --cluster "$clusterName" --region "$region" --set-kubeconfig-context --authenticator-role-arn "$adminRoleArn"
+      green "# Done! You can now use kubectl / Helm to manage $clusterName"
+  else
+      yellow "# Updating kubeconfig"
+      eksctl utils write-kubeconfig --cluster $clusterName --region $region --set-kubeconfig-context
+      green "# Done! You can now use kubectl / Helm to manage $clusterName"
+  fi
+}
+
+chronom_cli_upgrade_chronom_command() {
+  yellow "# Upgrading Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
+  yellow "# Updating kubeconfig to use the cluster ${args[--cluster-name]} in the region ${args[--region]}"
+
+  clusterName=${args[--cluster-name]}
+  region=${args[--region]}
+  version=${args[--version]}
+  namespace=${args[--namespace]}
+
+  adminRoleArn=$(aws iam get-role --role-name $clusterName-AdminRole --query 'Role.Arn' --output text)
+  eksctl utils write-kubeconfig --cluster $clusterName --region $region --set-kubeconfig-context --authenticator-role-arn $adminRoleArn
+
+  green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
+
+  yellow "# Extracting Chronom Helm registry credentials"
+  registryCredentials=$(kubectl get secret chronom-registry-key -n chronom -o jsonpath='{.data.\.dockerconfigjson}' | base64 --decode)
+
+  registryAddress=$(echo $registryCredentials | jq -r '.auths' | jq -r 'keys[0]')
+  registryUsername=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .username')
+  registryPassword=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .password')
+
+  helm registry login "$registryAddress" --username "$registryUsername" --password "$registryPassword"
+
+  helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version"
+
+  green "# Done! Chronom has been upgraded to version ${args[--version]} in cluster ${args[--cluster-name]}"
+  green "# Note that it might take a moment for the new version to completly replace the old one"
+}
+
 chronom_cli_completions_command() {
   # Call the `send_completions` function which was added by running:
   #
@@ -2259,6 +2487,13 @@ parse_requirements() {
       action="configure"
       shift
       chronom_cli_configure_parse_requirements "$@"
+      shift $#
+      ;;
+
+    upgrade)
+      action="upgrade"
+      shift
+      chronom_cli_upgrade_parse_requirements "$@"
       shift $#
       ;;
 
@@ -4062,6 +4297,13 @@ chronom_cli_configure_parse_requirements() {
       shift $#
       ;;
 
+    kube-context | k)
+      action="kube-context"
+      shift
+      chronom_cli_configure_kube_context_parse_requirements "$@"
+      shift $#
+      ;;
+
     "")
       chronom_cli_configure_usage >&2
       exit 1
@@ -4249,6 +4491,337 @@ chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
 
 }
 
+chronom_cli_configure_kube_context_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_configure_kube_context_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v aws >/dev/null 2>&1; then
+    deps['aws']="$(command -v aws | head -n1)"
+  else
+    printf "missing dependency: aws\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+  Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  action="configure kube-context"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --name | -n)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--name requires an argument: --name, -n NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --region | -r)
+
+        if [[ -n ${2+x} ]]; then
+
+          if [[ -n $(validate_available_aws_region "$2") ]]; then
+            printf "validation error in %s:\n%s\n" "--region, -r REGION" "$(validate_available_aws_region "$2")" >&2
+            exit 1
+          fi
+
+          args['--region']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--region requires an argument: --region, -r REGION" >&2
+          exit 1
+        fi
+        ;;
+
+      --use-admin-role)
+
+        args['--use-admin-role']=1
+        shift
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['--name']+x} ]]; then
+    printf "missing required flag: --name, -n NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--region']+x} ]]; then
+    printf "missing required flag: --region, -r REGION\n" >&2
+    exit 1
+  fi
+
+}
+
+chronom_cli_upgrade_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_upgrade_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    chronom)
+      action="chronom"
+      shift
+      chronom_cli_upgrade_chronom_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      chronom_cli_upgrade_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+chronom_cli_upgrade_chronom_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_upgrade_chronom_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  if command -v aws >/dev/null 2>&1; then
+    deps['aws']="$(command -v aws | head -n1)"
+  else
+    printf "missing dependency: aws\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+  Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+    exit 1
+  fi
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  if command -v helm >/dev/null 2>&1; then
+    deps['helm']="$(command -v helm | head -n1)"
+  else
+    printf "missing dependency: helm\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
+  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
+    exit 1
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    deps['jq']="$(command -v jq | head -n1)"
+  else
+    printf "missing dependency: jq\n" >&2
+    printf "%s\n" "Please install jq - https://stedolan.github.io/jq/download/" >&2
+    exit 1
+  fi
+
+  action="upgrade chronom"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --version | -v)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--version']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--version requires an argument: --version, -v VERSION" >&2
+          exit 1
+        fi
+        ;;
+
+      --cluster-name | -n)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--cluster-name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--cluster-name requires an argument: --cluster-name, -n CLUSTER-NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --region | -r)
+
+        if [[ -n ${2+x} ]]; then
+
+          if [[ -n $(validate_available_aws_region "$2") ]]; then
+            printf "validation error in %s:\n%s\n" "--region, -r REGION" "$(validate_available_aws_region "$2")" >&2
+            exit 1
+          fi
+
+          args['--region']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--region requires an argument: --region, -r REGION" >&2
+          exit 1
+        fi
+        ;;
+
+      --namespace)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--namespace']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--namespace requires an argument: --namespace NAMESPACE" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['--version']+x} ]]; then
+    printf "missing required flag: --version, -v VERSION\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--cluster-name']+x} ]]; then
+    printf "missing required flag: --cluster-name, -n CLUSTER-NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--region']+x} ]]; then
+    printf "missing required flag: --region, -r REGION\n" >&2
+    exit 1
+  fi
+
+  [[ -n ${args['--namespace']:-} ]] || args['--namespace']="chronom"
+
+}
+
 chronom_cli_completions_parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -4328,6 +4901,9 @@ run() {
     "configure") chronom_cli_configure_command ;;
     "configure chronom") chronom_cli_configure_chronom_command ;;
     "configure chronom additional-cluster-eks") chronom_cli_configure_chronom_additional_cluster_eks_command ;;
+    "configure kube-context") chronom_cli_configure_kube_context_command ;;
+    "upgrade") chronom_cli_upgrade_command ;;
+    "upgrade chronom") chronom_cli_upgrade_chronom_command ;;
     "completions") chronom_cli_completions_command ;;
   esac
 }
