@@ -408,7 +408,42 @@ commands:
         required: true
         repeatable: false
 
+  - name: kube-context
+    alias: k
+    help: Configure the current Kubernetes context to use Chronom A.I.
+    dependencies:
+      kubectl: |-
+        Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+        Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+      aws: |-
+        Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+        Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+      eksctl: |-
+        Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+        Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+    flags:
+    - long: --name
+      short: -n
+      arg: name
+      required: true
+      help: The name of the EKS Cluster to configure
+      completions:
+      - "chronom-cluster"
+    - long: --region
+      short: -r
+      arg: region
+      required: true
+      repeatable: false
+      help: The AWS region where the EKS Cluster is located
+      validate: available_aws_region
+      completions:
+      - "eu-north-1"
+    - long: --use-admin-role
+      help: Only for Chronom Cluster - Use the Admin Role to configure the Kubernetes context
+      required: false
+
 - name: completions
+
 
   help: |-
     Generate bash completions
