@@ -31,7 +31,7 @@ create_cluster_addons_bundle() {
     green "# Metrics Server deployed successfully"
     
     yellow "# Deploying Cluster Autoscaler"
-    kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f <(curl -s https://chronompublicresources.s3.eu-north-1.amazonaws.com/k8sYamls/autoscaler.yaml | sed "s/<YOUR CLUSTER NAME>/$clusterName/g" )
+    kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f <(curl -s https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/autoscaler.yaml | sed "s/<YOUR CLUSTER NAME>/$clusterName/g" )
     green "# Cluster Autoscaler deployed successfully"
     
     
