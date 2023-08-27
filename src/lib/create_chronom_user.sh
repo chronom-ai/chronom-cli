@@ -23,7 +23,7 @@ create_chronom_user() {
     if [ ! "$skip" ]; then
         echo -e "accountId: \n  $accountId" > "$userName-details.yaml"
         echo -e "roleArn: \n  $roleArn" >> "$userName-details.yaml"
-        echo -e "accessKeyId: \n  $(echo $accessKey | jq -r '.accessKey')" >> "$userName-details.yaml"
-        echo -e "accessKeySecret: \n  $(echo $accessKey | jq -r '.secretKey')" >> "$userName-details.yaml"
+        echo -e "accessKeyId: \n  $(echo $accessKey | jq -r '.accessKeyId')" >> "$userName-details.yaml"
+        echo -e "accessKeySecret: \n  $(echo $accessKey | jq -r '.secretAccessKey')" >> "$userName-details.yaml"
     fi
 }
