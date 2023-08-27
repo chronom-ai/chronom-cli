@@ -16,6 +16,8 @@ create_chronom_user() {
     rm readonly-policy.json
     aws iam attach-role-policy --role-name "$roleName" --policy-arn "$roPolicyArn"
     accessKey=$(aws iam create-access-key --user-name "$userName" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
+
+    green_bold "$accessKey"
     
     green "# Successfull created user $userName and role $roleArn"
     green "# Please upload the data from $userName-details.yaml to Chronom's Multi Account Management page"
@@ -23,7 +25,7 @@ create_chronom_user() {
     if [ ! "$skip" ]; then
         echo -e "accountId: \n  $accountId" > "$userName-details.yaml"
         echo -e "roleArn: \n  $roleArn" >> "$userName-details.yaml"
-        echo -e "accessKeyId: \n  $(echo $accessKey | jq -r '.accessKeyId')" >> "$userName-details.yaml"
-        echo -e "accessKeySecret: \n  $(echo $accessKey | jq -r '.secretAccessKey')" >> "$userName-details.yaml"
+        echo -e "accessKeyId: \n  $(echo "$accessKey" | jq -r '.accessKeyId')" >> "$userName-details.yaml"
+        echo -e "accessKeySecret: \n  $(echo "$accessKey" | jq -r '.secretAccessKey')" >> "$userName-details.yaml"
     fi
 }
