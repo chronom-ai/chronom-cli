@@ -1161,16 +1161,16 @@ create_asm_secret() {
     tags="$3"
 
     cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
-    initialSecret="[{\"orgId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\"}]"
-    secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$accessKey" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
+    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\"}]"
+    secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
     aws iam create-user --user-name "$clusterName-asm-ro-user" --tags "$tags"
-    roAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$accessKey-ro-user" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
-    roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "aws-credentials-$accessKey-ro-user-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
-    aws iam attach-user-policy --user-name "aws-credentials-$accessKey-ro-user" --policy-arn "$roPolicyArn"
-    aws iam create-user --user-name "aws-credentials-$accessKey-rw-user" --tags "$tags"
-    rwAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$accessKey-rw-user" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
-    rwPolicyArn=$(aws iam create-policy --policy-name "aws-credentials-$accessKey-rw-user-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\",\"secretsmanager:UpdateSecret\",\"secretsmanager:PutSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
-    aws iam attach-user-policy --user-name "aws-credentials-$accessKey-rw-user" --policy-arn "$rwPolicyArn"
+    roAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-ro-user" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
+    roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "aws-credentials-$chronomAuthId-ro-user-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+    aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-ro-user" --policy-arn "$roPolicyArn"
+    aws iam create-user --user-name "aws-credentials-$chronomAuthId-rw-user" --tags "$tags"
+    rwAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-rw-user" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
+    rwPolicyArn=$(aws iam create-policy --policy-name "aws-credentials-$chronomAuthId-rw-user-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\",\"secretsmanager:UpdateSecret\",\"secretsmanager:PutSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+    aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-rw-user" --policy-arn "$rwPolicyArn"
 }
 
 create_certificate_request() {
@@ -1196,11 +1196,11 @@ create_chronom_user() {
     roleArn=$(aws iam create-role --role-name "$roleName" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}" --query 'Role.Arn' --output text)
     assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]},{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:*:*:cluster/*\"]}]}" --query 'Policy.Arn' --output text)
     aws iam attach-user-policy --user-name "$userName" --policy-arn "$assumePolicyArn"
-    curl -Os https://chronompublicresources.s3.eu-north-1.amazonaws.com/IAMPolicies/readonly-policy.json
+    curl -Os https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/readonly-policy.json
     roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "$roleName-permissions-policy" --policy-document file://readonly-policy.json  --query 'Policy.Arn' --output text)
     rm readonly-policy.json
     aws iam attach-role-policy --role-name "$roleName" --policy-arn "$roPolicyArn"
-    accessKey=$(aws iam create-access-key --user-name "$userName" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
+    accessKey=$(aws iam create-access-key --user-name "$userName" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
 
     green "# Successfull created user $userName and role $roleArn"
     green "# Please upload the data from $userName-details.yaml to Chronom's Multi Account Management page"
@@ -1244,7 +1244,7 @@ create_cluster_addons_bundle() {
     green "# Metrics Server deployed successfully"
 
     yellow "# Deploying Cluster Autoscaler"
-    kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f <(curl -s https://chronompublicresources.s3.eu-north-1.amazonaws.com/k8sYamls/autoscaler.yaml | sed "s/<YOUR CLUSTER NAME>/$clusterName/g" )
+    kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f <(curl -s https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/autoscaler.yaml | sed "s/<YOUR CLUSTER NAME>/$clusterName/g" )
     green "# Cluster Autoscaler deployed successfully"
 
     yellow "# Deploying KUBE-PROXY & COREDNS addons"
