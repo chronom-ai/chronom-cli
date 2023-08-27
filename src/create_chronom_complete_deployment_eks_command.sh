@@ -36,6 +36,9 @@ else
     chronomRegistryUsername=org-$chronomAuthId
 fi
 
+tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+
+eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
 yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
 read -s chronomAuthSecret
@@ -47,22 +50,7 @@ do
     read -s chronomAuthSecret
 done
 
-# # chronomAuthSecretLength=${#chronomAuthSecret}
-# # chronomAuthMasked=$(printf '*%.0s' $(seq 1 $((chronomAuthSecretLength - 4))))
-# # cyan_underlined "\n Chronom Auth Secret: ${chronomAuthSecret:0:2}${chronomAuthMasked}${chronomAuthSecret: -2}"
-# # cyan_underlined "Chronom Auth Secret length: ${#chronomAuthSecret}"
-# # cyan_underlined "Is this correct? (y/n)"
-# # read authAnswer
-# # if [ "$authAnswer" != "${authAnswer#[Yy]}" ] ;then
-# #     green "Continuing..."
-# # else
-# #     red_bold "Exiting..."
-# #     exit 1
-# # fi
-
 echo
-
-
 
 yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
 read -s chronomRegistryPassword
@@ -74,23 +62,27 @@ do
     read -s chronomRegistryPassword
 done
 
-# # chronomRegistryPasswordLength=${#chronomRegistryPassword}
-# # chronomRegistryMasked=$(printf '*%.0s' $(seq 1 $((chronomRegistryPasswordLength - 4))))
 
-# # cyan_underlined "\n Chronom Registry Password: ${chronomRegistryPassword:0:2}${chronomRegistryMasked}${chronomRegistryPassword: -2}"
-# # cyan_underlined "Chronom Registry Password length: ${#chronomRegistryPassword}"
-# # cyan_underlined "Is this correct? (y/n)"
-# # read registryAnswer
-# # if [ "$registryAnswer" != "${registryAnswer#[Yy]}" ] ;then
-# #     green "Continuing..."
-# # else
-# #     red_bold "Exiting..."
-# #     exit 1
-# # fi
-# # echo
+## Create Chronom user
+yellow "# Creating Chronom user"
+create_chronom_user "$chronomReadOnlyUsername" true
+green "# Chronom user created successfully"
+
+## Create a new AWS Secret Manager Secrect to Store the AWS Credentials for the Chronom readonly users
+yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+create_asm_secret "$clusterName" "$region" "$tags"
+green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+
+
 
 ## Create a fully functional cluster tailored for Chronom
-create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $accountId
+create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId"
+
+## Add Chronom user to the cluster
+yellow "# Adding $chronomReadOnlyUsername to the cluster"
+chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
+green "# $chronomReadOnlyUsername added to the cluster successfully"
+
 
 if [ ! ${args[--skip-certificate-setup]} ]; then
     ## Create a new certificate request for the chronom Deployment that will be created later
@@ -111,24 +103,13 @@ if [ ! ${args[--skip-certificate-setup]} ]; then
     fi
 fi
 
-## Create Chronom user
-yellow "# Creating Chronom user"
-create_chronom_user $chronomReadOnlyUsername true
-green "# Chronom user created successfully"
-
-
-## Add Chronom user to the cluster
-yellow "# Adding $chronomReadOnlyUsername to the cluster"
-chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
-green "# $chronomReadOnlyUsername added to the cluster successfully"
-
 
 ## Deploy Chronom Helm Chart
 yellow "# Deploying Chronom Helm Chart in the cluster $clusterName"
 
-flatAccessKey=$(echo $accessKey | jq -c . )
+# flatAccessKey=$(echo $accessKey | jq -c . )
 
-chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $flatAccessKey $roleArn $chronomNamespace $ingressEnabled
+chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $roAccessKey $rwAccessKey $ingressEnabled
 green "# Chronom Helm Chart deployed successfully"
 
 if [ ! ${args[--skip-ingress-setup]} ]; then

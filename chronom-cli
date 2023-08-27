@@ -304,7 +304,7 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-version CHRONOM-VERSION")"
     printf "    The Chronom A.I. Version to install.\n    Defaults to the latest version at the time of release.\n"
-    printf "    Default: 0.0.1\n"
+    printf "    Default: 0.0.2\n"
     echo
 
     printf "  %s\n" "$(yellow "--chronom-namespace CHRONOM-NAMESPACE")"
@@ -1096,9 +1096,9 @@ chronom_helm_install() {
     authClientSecret="$7"
     dnsRecord="$8"
     chronomVersion="$9"
-    accessKey=${10}
-    roleArn="${11}"
-    namespace="${12}"
+    namespace="${10}"
+    roAccessKey=${11}
+    rwAccessKey=${12}
     ingressEnabled="${13}"
     yellow "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
 
@@ -1115,13 +1115,102 @@ chronom_helm_install() {
 
     auth='{"clientId": "'$authClientId'", "clientSecret": "'$authClientSecret'"}'
 
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version $chronomVersion --set dnsRecord=$dnsRecord --set-json="awsscanner=$accessKey" --set-json="imageCredentials=$imageCredentials" --set awsscanner.roleArn=$roleArn --set-json="auth=$auth" --namespace $namespace --set ingressEnabled=$ingressEnabled --create-namespace
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version $chronomVersion --set dnsRecord=$dnsRecord --set ingressEnabled=$ingressEnabled --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace $namespace --create-namespace
 
     sleep 30
 
     ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
 
     rm $pemFile
+}
+
+print_in_color() {
+  local color="$1"
+  shift
+  if [[ -z ${NO_COLOR+x} ]]; then
+    printf "$color%b\e[0m\n" "$*"
+  else
+    printf "%b\n" "$*"
+  fi
+}
+
+red() { print_in_color "\e[31m" "$*"; }
+green() { print_in_color "\e[32m" "$*"; }
+yellow() { print_in_color "\e[33m" "$*"; }
+blue() { print_in_color "\e[34m" "$*"; }
+magenta() { print_in_color "\e[35m" "$*"; }
+cyan() { print_in_color "\e[36m" "$*"; }
+bold() { print_in_color "\e[1m" "$*"; }
+underlined() { print_in_color "\e[4m" "$*"; }
+red_bold() { print_in_color "\e[1;31m" "$*"; }
+green_bold() { print_in_color "\e[1;32m" "$*"; }
+yellow_bold() { print_in_color "\e[1;33m" "$*"; }
+blue_bold() { print_in_color "\e[1;34m" "$*"; }
+magenta_bold() { print_in_color "\e[1;35m" "$*"; }
+cyan_bold() { print_in_color "\e[1;36m" "$*"; }
+red_underlined() { print_in_color "\e[4;31m" "$*"; }
+green_underlined() { print_in_color "\e[4;32m" "$*"; }
+yellow_underlined() { print_in_color "\e[4;33m" "$*"; }
+blue_underlined() { print_in_color "\e[4;34m" "$*"; }
+magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
+cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
+
+create_asm_secret() {
+    clusterName="$1"
+    region="$2"
+    tags="$3"
+
+    cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
+    initialSecret="[{\"orgId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\"}]"
+    secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$accessKey" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
+    aws iam create-user --user-name "$clusterName-asm-ro-user" --tags "$tags"
+    roAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$accessKey-ro-user" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
+    roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "aws-credentials-$accessKey-ro-user-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+    aws iam attach-user-policy --user-name "aws-credentials-$accessKey-ro-user" --policy-arn "$roPolicyArn"
+    aws iam create-user --user-name "aws-credentials-$accessKey-rw-user" --tags "$tags"
+    rwAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$accessKey-rw-user" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
+    rwPolicyArn=$(aws iam create-policy --policy-name "aws-credentials-$accessKey-rw-user-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\",\"secretsmanager:UpdateSecret\",\"secretsmanager:PutSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+    aws iam attach-user-policy --user-name "aws-credentials-$accessKey-rw-user" --policy-arn "$rwPolicyArn"
+}
+
+create_certificate_request() {
+    dnsRecord="$1"
+    region="$2"
+
+    certReqArn=$(aws acm request-certificate --domain-name $dnsRecord --tags "$tags" --validation-method DNS --region $region --output text --query "CertificateArn")
+    sleep 10
+    validationName=$(aws acm describe-certificate --certificate-arn $certReqArn --region $region --query "Certificate.DomainValidationOptions[?DomainName=='$dnsRecord'].ResourceRecord.Name" --output text)
+    validationValue=$(aws acm describe-certificate --certificate-arn $certReqArn --region $region --query "Certificate.DomainValidationOptions[?DomainName=='$dnsRecord'].ResourceRecord.Value" --output text)
+}
+
+create_chronom_user() {
+    userName="$1"
+    skip="$2"
+
+    roleName=$userName-role
+
+    tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+
+    accountId=$(aws sts get-caller-identity --query 'Account' --output text)
+    aws iam create-user --user-name "$userName" --tags "$tags" --query 'User.Arn' --output text
+    roleArn=$(aws iam create-role --role-name "$roleName" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}" --query 'Role.Arn' --output text)
+    assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]},{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:*:*:cluster/*\"]}]}" --query 'Policy.Arn' --output text)
+    aws iam attach-user-policy --user-name "$userName" --policy-arn "$assumePolicyArn"
+    curl -Os https://chronompublicresources.s3.eu-north-1.amazonaws.com/IAMPolicies/readonly-policy.json
+    roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "$roleName-permissions-policy" --policy-document file://readonly-policy.json  --query 'Policy.Arn' --output text)
+    rm readonly-policy.json
+    aws iam attach-role-policy --role-name "$roleName" --policy-arn "$roPolicyArn"
+    accessKey=$(aws iam create-access-key --user-name "$userName" --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
+
+    green "# Successfull created user $userName and role $roleArn"
+    green "# Please upload the data from $userName-details.yaml to Chronom's Multi Account Management page"
+
+    if [ ! "$skip" ]; then
+        echo -e "accountId: \n  $accountId" > "$userName-details.yaml"
+        echo -e "roleArn: \n  $roleArn" >> "$userName-details.yaml"
+        echo -e "accessKeyId: \n  $(echo $accessKey | jq -r '.accessKey')" >> "$userName-details.yaml"
+        echo -e "accessKeySecret: \n  $(echo $accessKey | jq -r '.secretKey')" >> "$userName-details.yaml"
+    fi
 }
 
 create_rsa_key_pair() {
@@ -1131,7 +1220,7 @@ create_rsa_key_pair() {
 
     check_available_key_pair_name $clusterName-KeyPair $region
     mkdir -p ~/.ssh
-    aws ec2 create-key-pair --key-name $clusterName-KeyPair --region $region --query "KeyMaterial" --output text > ~/.ssh/$clusterName-KeyPair.pem
+    aws ec2 create-key-pair --key-name "$clusterName-KeyPair" --region $region --query "KeyMaterial" --output text > ~/.ssh/$clusterName-KeyPair.pem
     sshKeysFlags="--ssh-access --ssh-public-key $clusterName-KeyPair"
 }
 
@@ -1261,6 +1350,83 @@ EOF
     rm $pemFile
 }
 
+# create_cluster_complete(){
+#     clusterName="$1"
+#     region="$2"
+#     version="$3"
+#     nodeType="$4"
+#     minNodes="$5"
+#     maxNodes="$6"
+#     accountId="$7"
+
+#     ## Check if cluster name is available
+#     check_available_cluster_name $clusterName $region
+
+#     if [ ${args[--key-pair-name]} ]; then
+#         keyPairName=${args[--key-pair-name]}
+#         yellow "# Using existing RSA Key Pair: $keyPairName"
+#         sshKeysFlags="--ssh-access --ssh-public-key $keyPairName"
+
+#         elif [ ${args[--create-rsa-key]} ]; then
+#         yellow "# Creating a new RSA Key Pair"
+#         create_rsa_key_pair $clusterName $region
+#         green "# RSA Key Pair created successfully"
+#         green "# You can find the PEM file in $(pwd)/$clusterName-KeyPair.pem"
+#     fi
+
+#     yellow "# Creating a new EKS Cluster in the $region region"
+#     eksctl create cluster --name $clusterName --region $region --version $version --without-nodegroup --managed --with-oidc --alb-ingress-access --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access $sshKeysFlags
+#     green "# EKS Cluster created successfully"
+
+#     yellow "# Creating a new IAM Role with Admin Access for the Kubernetes API Server"
+#     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
+#     adminRoleArn=$(aws iam create-role --role-name $clusterName"-AdminRole" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}"  --query "Role.Arn" --output text)
+#     adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\",\"eks:DescribeCluster\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
+#     aws iam attach-role-policy --role-name $clusterName"-AdminRole" --policy-arn $adminRolePolicyArn
+#     eksctl create iamidentitymapping --cluster $clusterName --region $region --arn $adminRoleArn --group system:masters --username admin
+#     green "# IAM Role with Admin Access for the Kubernetes API Server created successfully"
+
+#     yellow "# Generating Temporary Credentials for the EKS Cluster Kubernetes API Server"
+#     token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
+#     certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)
+#     endpoint=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.endpoint" --output text)
+
+#     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
+#     echo $certificate | base64 -d > $pemFile
+#     green "# Temporary Credentials generated successfully"
+
+#     yellow "# Creating VPC-CNI addon"
+#     create_vpc_cni_addon $clusterName $region
+#     green "# VPC-CNI addon configured successfully"
+
+#     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
+
+#     eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region $region --alb-ingress-access --name $clusterName"-NodeGroup"
+#     green "# EKS NodeGroup created successfully"
+
+#     create_cluster_addons_bundle $clusterName $region
+
+#     yellow "# Deploying AWS Load Balancer Controller"
+#     create_cluster_elb_addon $clusterName $region $accountId
+#     green "# AWS Load Balancer Controller deployed successfully"
+
+#     yellow "# Deploying EBS CSI Driver"
+#     eksctl create iamserviceaccount --name ebs-csi-controller-sa --namespace kube-system --region $region --cluster $clusterName --role-name $clusterName"-AmazonEKSEBSCSIDriverRole" --role-only --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve || red "# Warning:"
+#     eksctl create addon --name aws-ebs-csi-driver --cluster $clusterName --region $region --service-account-role-arn arn:aws:iam::$accountId:role/$clusterName"-AmazonEKSEBSCSIDriverRole" --force
+#     if [ ! ${args[--skip-gp3-setup]} ]; then
+#         gp3StorageClass
+#     fi
+#     green "# EBS CSI Driver deployed successfully"
+
+#     if [ ! ${args[--skip-calico-setup]} ]; then
+#         yellow "# Deploying Calico CNI"
+#         calicoClusterRole
+#         green "# Calico CNI deployed successfully"
+#     fi
+
+#     rm $pemFile
+# }
+
 create_cluster_complete(){
     clusterName="$1"
     region="$2"
@@ -1285,13 +1451,13 @@ create_cluster_complete(){
     fi
 
     yellow "# Creating a new EKS Cluster in the $region region"
-    eksctl create cluster --name $clusterName --region $region --version $version --without-nodegroup --managed --with-oidc --alb-ingress-access --asg-access --node-private-networking --external-dns-access $sshKeysFlags
+    eksctl create cluster --name $clusterName --region $region --version $version --without-nodegroup --managed --with-oidc --alb-ingress-access --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access $sshKeysFlags
     green "# EKS Cluster created successfully"
 
     yellow "# Creating a new IAM Role with Admin Access for the Kubernetes API Server"
     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
-    adminRoleArn=$(aws iam create-role --role-name $clusterName"-AdminRole" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}"  --query "Role.Arn" --output text)
-    adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\",\"eks:DescribeCluster\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
+    adminRoleArn=$(aws iam create-role --role-name $clusterName"-AdminRole" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}"  --query "Role.Arn" --output text)
+    adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\",\"eks:DescribeCluster\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
     aws iam attach-role-policy --role-name $clusterName"-AdminRole" --policy-arn $adminRolePolicyArn
     eksctl create iamidentitymapping --cluster $clusterName --region $region --arn $adminRoleArn --group system:masters --username admin
     green "# IAM Role with Admin Access for the Kubernetes API Server created successfully"
@@ -1308,11 +1474,6 @@ create_cluster_complete(){
     yellow "# Creating VPC-CNI addon"
     create_vpc_cni_addon $clusterName $region
     green "# VPC-CNI addon configured successfully"
-
-    yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
-
-    eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --node-private-networking --external-dns-access --region $region --alb-ingress-access --name $clusterName"-NodeGroup"
-    green "# EKS NodeGroup created successfully"
 
     create_cluster_addons_bundle $clusterName $region
 
@@ -1334,118 +1495,12 @@ create_cluster_complete(){
         green "# Calico CNI deployed successfully"
     fi
 
+    yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
+
+    eksctl create nodegroup --cluster "$clusterName" --node-type "$nodeType" --nodes-min "$minNodes" --nodes-max "$maxNodes" $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region "$region" --alb-ingress-access --name $clusterName"-NodeGroup"
+    green "# EKS NodeGroup created successfully"
+
     rm $pemFile
-}
-
-check_available_cluster_name() {
-    clusterName="$1"
-    region="$2"
-
-    clustersInRegion=$(aws eks list-clusters --region $region --query "clusters" --output text) || { echo "Error: Unable to list clusters in region $region"; exit; }
-    if [ "$(echo "$clustersInRegion" | grep -w "$clusterName")" ]; then
-        red_bold "Error: Cluster name $clusterName already exists"
-        red_bold "Please choose a different name or region"
-        exit
-    fi
-}
-
-check_available_key_pair_name() {
-
-    keyPairName="$1"
-    region="$2"
-    keyPairsInRegion=$(aws ec2 describe-key-pairs --region $region --query "KeyPairs[].KeyName" --output text) || { echo "Error: Unable to list key pairs in region $region"; exit; }
-    if [ "$(echo "$keyPairsInRegion" | grep -w "$keyPairName")" ]; then
-        red_bold "Error: Key Pair $keyPairName already exists"
-        red_bold "If you would like to use and existing Key Pair please pass the name using the --key-pair-name flag"
-        red_bold "The Key Pair MUST be in the same region as the cluster"
-        exit
-    fi
-
-}
-
-print_in_color() {
-  local color="$1"
-  shift
-  if [[ -z ${NO_COLOR+x} ]]; then
-    printf "$color%b\e[0m\n" "$*"
-  else
-    printf "%b\n" "$*"
-  fi
-}
-
-red() { print_in_color "\e[31m" "$*"; }
-green() { print_in_color "\e[32m" "$*"; }
-yellow() { print_in_color "\e[33m" "$*"; }
-blue() { print_in_color "\e[34m" "$*"; }
-magenta() { print_in_color "\e[35m" "$*"; }
-cyan() { print_in_color "\e[36m" "$*"; }
-bold() { print_in_color "\e[1m" "$*"; }
-underlined() { print_in_color "\e[4m" "$*"; }
-red_bold() { print_in_color "\e[1;31m" "$*"; }
-green_bold() { print_in_color "\e[1;32m" "$*"; }
-yellow_bold() { print_in_color "\e[1;33m" "$*"; }
-blue_bold() { print_in_color "\e[1;34m" "$*"; }
-magenta_bold() { print_in_color "\e[1;35m" "$*"; }
-cyan_bold() { print_in_color "\e[1;36m" "$*"; }
-red_underlined() { print_in_color "\e[4;31m" "$*"; }
-green_underlined() { print_in_color "\e[4;32m" "$*"; }
-yellow_underlined() { print_in_color "\e[4;33m" "$*"; }
-blue_underlined() { print_in_color "\e[4;34m" "$*"; }
-magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
-cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
-
-create_certificate_request() {
-    dnsRecord="$1"
-    region="$2"
-
-    certReqArn=$(aws acm request-certificate --domain-name $dnsRecord --validation-method DNS --region $region --output text --query "CertificateArn")
-    sleep 10
-    validationName=$(aws acm describe-certificate --region $region --certificate-arn $certReqArn --region $region --query "Certificate.DomainValidationOptions[?DomainName=='$dnsRecord'].ResourceRecord.Name" --output text)
-    validationValue=$(aws acm describe-certificate --region $region --certificate-arn $certReqArn --region $region --query "Certificate.DomainValidationOptions[?DomainName=='$dnsRecord'].ResourceRecord.Value" --output text)
-}
-
-create_chronom_user() {
-    userName="$1"
-    skip="$2"
-
-    roleName=$userName-role
-
-    accountId=$(aws sts get-caller-identity --query 'Account' --output text)
-    userArn=$(aws iam create-user --user-name $userName --query 'User.Arn' --output text)
-    roleArn=$(aws iam create-role --role-name $roleName --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}" --query 'Role.Arn' --output text)
-    assumePolicyArn=$(aws iam create-policy --policy-name $userName-permissions-policy --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]},{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:*:*:cluster/*\"]}]}" --query 'Policy.Arn' --output text)
-    aws iam attach-user-policy --user-name $userName --policy-arn $assumePolicyArn
-    curl -Os https://chronompublicresources.s3.eu-north-1.amazonaws.com/IAMPolicies/readonly-policy.json
-    roPolicyArn=$(aws iam create-policy --policy-name $roleName-permissions-policy --policy-document file://readonly-policy.json  --query 'Policy.Arn' --output text)
-    rm readonly-policy.json
-    aws iam attach-role-policy --role-name $roleName --policy-arn $roPolicyArn
-    accessKey=$(aws iam create-access-key --user-name $userName --query '{accessKey:AccessKey.AccessKeyId, secretKey:AccessKey.SecretAccessKey}' --output json)
-
-    green "# Successfull created user $userName and role $roleName"
-    green "# Role ARN: $roleArn"
-
-    if [ ! "$skip" ]; then
-        echo "awsscanner:" > $userName-info.yaml
-        echo "  roleArn: $userArn" >> $userName-info.yaml
-        echo
-        green_underlined "Access Key Created Successfully!"
-        green_underlined "1. Print Access Key to console"
-        green_underlined "2. Save Access Key to file $userName-access-key.txt"
-        green_underlined "3. Print Access Key to console And Save to file $userName-access-key.txt"
-        green_underlined "4. NOT RECOMMENDED - Do Nothing"
-        green_underlined "Enter your choice (1/2/3/4):"
-        echo
-        read choice
-        case "$choice" in
-            1 ) echo $accessKey;;
-            2 ) echo $accessKey > $userName-access-key.txt;;
-            3 ) echo $accessKey; echo $accessKey > $userName-access-key.txt;;
-            4 ) echo "Skipping Access Key";;
-            * ) echo "Invalid choice";;
-        esac
-        echo
-    fi
-
 }
 
 create_cname_record() {
@@ -1564,14 +1619,14 @@ install_aws_cli() {
             blue "# aws CLI version is less than $required_version, Installing newer version"
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
-            sudo ./aws/install
+            sudo ./aws/install || ./aws/install || red "# Failed to install aws CLI"
             green "# Successfully installed AWS CLI locally"
         fi
     else
         red "# aws CLI is not installed, installing now"
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
         unzip awscliv2.zip
-        sudo ./aws/install
+        sudo ./aws/install || ./aws/install || red "# Failed to install aws CLI"
         green "# Successfully installed AWS CLI locally"
     fi
 }
@@ -1625,6 +1680,32 @@ install_kubectl() {
 
         green "# Successfully installed kubectl locally"
     fi
+}
+
+check_available_cluster_name() {
+    clusterName="$1"
+    region="$2"
+
+    clustersInRegion=$(aws eks list-clusters --region $region --query "clusters" --output text) || { echo "Error: Unable to list clusters in region $region"; exit; }
+    if [ "$(echo "$clustersInRegion" | grep -w "$clusterName")" ]; then
+        red_bold "Error: Cluster name $clusterName already exists"
+        red_bold "Please choose a different name or region"
+        exit
+    fi
+}
+
+check_available_key_pair_name() {
+
+    keyPairName="$1"
+    region="$2"
+    keyPairsInRegion=$(aws ec2 describe-key-pairs --region $region --query "KeyPairs[].KeyName" --output text) || { echo "Error: Unable to list key pairs in region $region"; exit; }
+    if [ "$(echo "$keyPairsInRegion" | grep -w "$keyPairName")" ]; then
+        red_bold "Error: Key Pair $keyPairName already exists"
+        red_bold "If you would like to use and existing Key Pair please pass the name using the --key-pair-name flag"
+        red_bold "The Key Pair MUST be in the same region as the cluster"
+        exit
+    fi
+
 }
 
 send_completions() {
@@ -2049,6 +2130,9 @@ chronom_cli_create_cluster_eks_command() {
   chronomReadOnlyUserarn=${args[--chronom-readonly-userarn]}
   accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
+  tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+  eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
+
   create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $chronomReadOnlyUsername $chronomReadOnlyUserarn $accountId
 
 }
@@ -2101,6 +2185,10 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
       chronomRegistryUsername=org-$chronomAuthId
   fi
 
+  tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+
+  eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
+
   yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
   read -s chronomAuthSecret
   while [ ${#chronomAuthSecret} -lt 127 ]
@@ -2110,19 +2198,6 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
       red "Please enter the Chronom Auth Secret that was provided to you: "
       read -s chronomAuthSecret
   done
-
-  # # chronomAuthSecretLength=${#chronomAuthSecret}
-  # # chronomAuthMasked=$(printf '*%.0s' $(seq 1 $((chronomAuthSecretLength - 4))))
-  # # cyan_underlined "\n Chronom Auth Secret: ${chronomAuthSecret:0:2}${chronomAuthMasked}${chronomAuthSecret: -2}"
-  # # cyan_underlined "Chronom Auth Secret length: ${#chronomAuthSecret}"
-  # # cyan_underlined "Is this correct? (y/n)"
-  # # read authAnswer
-  # # if [ "$authAnswer" != "${authAnswer#[Yy]}" ] ;then
-  # #     green "Continuing..."
-  # # else
-  # #     red_bold "Exiting..."
-  # #     exit 1
-  # # fi
 
   echo
 
@@ -2136,22 +2211,19 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
       read -s chronomRegistryPassword
   done
 
-  # # chronomRegistryPasswordLength=${#chronomRegistryPassword}
-  # # chronomRegistryMasked=$(printf '*%.0s' $(seq 1 $((chronomRegistryPasswordLength - 4))))
+  yellow "# Creating Chronom user"
+  create_chronom_user "$chronomReadOnlyUsername" true
+  green "# Chronom user created successfully"
 
-  # # cyan_underlined "\n Chronom Registry Password: ${chronomRegistryPassword:0:2}${chronomRegistryMasked}${chronomRegistryPassword: -2}"
-  # # cyan_underlined "Chronom Registry Password length: ${#chronomRegistryPassword}"
-  # # cyan_underlined "Is this correct? (y/n)"
-  # # read registryAnswer
-  # # if [ "$registryAnswer" != "${registryAnswer#[Yy]}" ] ;then
-  # #     green "Continuing..."
-  # # else
-  # #     red_bold "Exiting..."
-  # #     exit 1
-  # # fi
-  # # echo
+  yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+  create_asm_secret "$clusterName" "$region" "$tags"
+  green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
 
-  create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $accountId
+  create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId"
+
+  yellow "# Adding $chronomReadOnlyUsername to the cluster"
+  chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
+  green "# $chronomReadOnlyUsername added to the cluster successfully"
 
   if [ ! ${args[--skip-certificate-setup]} ]; then
       create_certificate_request $dnsRecord $region
@@ -2171,19 +2243,11 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
       fi
   fi
 
-  yellow "# Creating Chronom user"
-  create_chronom_user $chronomReadOnlyUsername true
-  green "# Chronom user created successfully"
-
-  yellow "# Adding $chronomReadOnlyUsername to the cluster"
-  chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
-  green "# $chronomReadOnlyUsername added to the cluster successfully"
-
   yellow "# Deploying Chronom Helm Chart in the cluster $clusterName"
 
-  flatAccessKey=$(echo $accessKey | jq -c . )
+  # flatAccessKey=$(echo $accessKey | jq -c . )
 
-  chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $flatAccessKey $roleArn $chronomNamespace $ingressEnabled
+  chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $roAccessKey $rwAccessKey $ingressEnabled
   green "# Chronom Helm Chart deployed successfully"
 
   if [ ! ${args[--skip-ingress-setup]} ]; then
@@ -3282,7 +3346,7 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
   [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="2"
   [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="10"
-  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.1"
+  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.2"
   [[ -n ${args['--chronom-namespace']:-} ]] || args['--chronom-namespace']="chronom"
   [[ -n ${args['--chronom-registry-name']:-} ]] || args['--chronom-registry-name']="chronomprodacr.azurecr.io"
 

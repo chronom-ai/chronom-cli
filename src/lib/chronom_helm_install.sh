@@ -8,9 +8,9 @@ chronom_helm_install() {
     authClientSecret="$7"
     dnsRecord="$8"
     chronomVersion="$9"
-    accessKey=${10}
-    roleArn="${11}"
-    namespace="${12}"
+    namespace="${10}"
+    roAccessKey=${11}
+    rwAccessKey=${12}
     ingressEnabled="${13}"
     yellow "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
     
@@ -26,11 +26,11 @@ chronom_helm_install() {
     imageCredentials='{"registry": "'$registry'","username": "'$registryUsername'","password": "'$registryPassword'"}'
     
     auth='{"clientId": "'$authClientId'", "clientSecret": "'$authClientSecret'"}'
-
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version $chronomVersion --set dnsRecord=$dnsRecord --set-json="awsscanner=$accessKey" --set-json="imageCredentials=$imageCredentials" --set awsscanner.roleArn=$roleArn --set-json="auth=$auth" --namespace $namespace --set ingressEnabled=$ingressEnabled --create-namespace
+    
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version $chronomVersion --set dnsRecord=$dnsRecord --set ingressEnabled=$ingressEnabled --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace $namespace --create-namespace
     
     sleep 30
-
+    
     ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
     
     rm $pemFile
