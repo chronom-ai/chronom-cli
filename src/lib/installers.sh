@@ -82,6 +82,7 @@ install_helm() {
         chmod 700 get_helm.sh
         ./get_helm.sh
         green "# Successfully installed helm locally"
+        rm get_helm.sh
     fi
 }
 
