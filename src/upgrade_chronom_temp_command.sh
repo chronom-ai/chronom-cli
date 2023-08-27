@@ -71,3 +71,5 @@ helm registry login "$registryAddress" --username "$registryUsername" --password
 helm show values "oci://${registryAddress}/helm/chronom" --version "$version" > values.yaml
 
 helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" --set "initRegion=$region" --set secretRegion=$region --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" -f ./values.yaml --reuse-values
+
+# rm values.yaml
