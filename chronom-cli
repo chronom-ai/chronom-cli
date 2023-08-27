@@ -2564,8 +2564,6 @@ chronom_cli_upgrade_chronom_temp_command() {
 
   accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
-  # secretContent=$(kubectl get secrets -n "$namespace" awsscanner-chronom-chronom-secret -o jsonpath='{.data}' | jq --arg organizationId "$chronomAuthId" --arg accountId "$accountId" -c '[{accessKeyId: (.AWS_ACCESS_KEY_ID | @base64d),  secretAccessKey: (.AWS_SECRET_ACCESS_KEY | @base64d),  roleArn: (.ROLE_ARN | @base64d),organizationId: $organizationId,accountId: $accountId}]')
-
   secretValue=$(kubectl get secrets -n "$namespace" awsscanner-chronom-chronom-secret -o jsonpath='{.data}')
 
   accessKeyId=$(echo "$secretValue" | jq -r '.AWS_ACCESS_KEY_ID' | base64 -d)
@@ -2578,15 +2576,17 @@ chronom_cli_upgrade_chronom_temp_command() {
   yellow "# Creating Secret"
   secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$secretContent" --region "$region" --tags "$tags" --query 'ARN' --output text)
 
-  aws iam create-user --user-name "aws-credentials-$chronomAuthId-asm-ro-user" --tags "$tags"
-  roAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-asm-ro-user" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
-  roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "aws-credentials-$chronomAuthId-asm-ro-user-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
-  aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-asm-ro-user" --policy-arn "$roPolicyArn"
+  userRandom=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
 
-  aws iam create-user --user-name "aws-credentials-$chronomAuthId-asm-rw-user" --tags "$tags"
-  rwAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-asm-rw-user" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
-  rwPolicyArn=$(aws iam create-policy --policy-name "aws-credentials-$chronomAuthId-asm-rw-user-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\",\"secretsmanager:UpdateSecret\",\"secretsmanager:PutSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
-  aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-asm-rw-user" --policy-arn "$rwPolicyArn"
+  aws iam create-user --user-name "aws-credentials-$chronomAuthId-asm-ro-user-$userRandom" --tags "$tags"
+  roAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-asm-ro-user-$userRandom" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
+  roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "aws-credentials-$chronomAuthId-asm-ro-user-$userRandom-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+  aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-asm-ro-user-$userRandom" --policy-arn "$roPolicyArn"
+
+  aws iam create-user --user-name "aws-credentials-$chronomAuthId-asm-rw-user-$userRandom" --tags "$tags"
+  rwAccessKey=$(aws iam create-access-key --user-name "aws-credentials-$chronomAuthId-asm-rw-user-$userRandom" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
+  rwPolicyArn=$(aws iam create-policy --policy-name "aws-credentials-$chronomAuthId-asm-rw-user-$userRandom-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"readonly\",\"Effect\":\"Allow\",\"Action\":[\"secretsmanager:GetSecretValue\",\"secretsmanager:UpdateSecret\",\"secretsmanager:PutSecretValue\"],\"Resource\":\"$secretManagerArn\"}]}" --query 'Policy.Arn' --output text)
+  aws iam attach-user-policy --user-name "aws-credentials-$chronomAuthId-asm-rw-user-$userRandom" --policy-arn "$rwPolicyArn"
   green "# Successfully created Secret Manager"
 
   yellow "# Updating role IAM Policy"
