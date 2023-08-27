@@ -1242,8 +1242,6 @@ create_chronom_user() {
     aws iam attach-role-policy --role-name "$roleName" --policy-arn "$roPolicyArn"
     accessKey=$(aws iam create-access-key --user-name "$userName" --query '{accessKeyId:AccessKey.AccessKeyId, secretAccessKey:AccessKey.SecretAccessKey}' --output json)
 
-    green_bold "$accessKey"
-
     green "# Successfull created user $userName and role $roleArn"
     green "# Please upload the data from $userName-details.yaml to Chronom's Multi Account Management page"
 
