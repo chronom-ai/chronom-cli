@@ -69,14 +69,12 @@ registryPassword=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .pa
 green "# Successfully extracted Chronom Helm registry credentials"
 
 yellow "# Extracting Chronom Auth credentials"
-authCredentials=$(kubectl get secret auth-chronom-chronom-secret -n chronom -o jsonpath='{.data}')
-
-authClientId=$(echo $authCredentials | jq -r '.AUTH_CLIENT_ID' | base64 --decode)
-authClientSecret=$(echo $authCredentials | jq -r '.AUTH_CLIENT_SECRET' | base64 --decode)
+authClientSecret=$(kubectl get secret auth-chronom-chronom-secret -n chronom -o jsonpath='{.data.AUTH_CLIENT_SECRET}' | base64 --decode)
 
 helm registry login "$registryAddress" --username "$registryUsername" --password "$registryPassword"
 
+dnsRecord=$(helm get values chronom -n chronom --output json | jq -r '.dnsRecord')
 
-helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" --set "initRegion=$region" --set secretRegion=$region --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --set "auth.clientId=$authClientId" --set "auth.clientSecret=$authClientSecret"
+helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" --set "initRegion=$region" --set secretRegion=$region --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --set "auth.clientId=$chronomAuthId" --set "auth.clientSecret=$authClientSecret" --set "dnsRecord=$dnsRecord"
 
 # rm values.yaml
