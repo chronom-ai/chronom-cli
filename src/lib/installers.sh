@@ -48,14 +48,14 @@ install_aws_cli() {
             blue "# aws CLI version is less than $required_version, Installing newer version"
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
-            sudo ./aws/install
+            sudo ./aws/install || ./aws/install || red "# Failed to install aws CLI"
             green "# Successfully installed AWS CLI locally"
         fi
     else
         red "# aws CLI is not installed, installing now"
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
         unzip awscliv2.zip
-        sudo ./aws/install
+        sudo ./aws/install || ./aws/install || red "# Failed to install aws CLI"
         green "# Successfully installed AWS CLI locally"
     fi
 }
@@ -82,6 +82,7 @@ install_helm() {
         chmod 700 get_helm.sh
         ./get_helm.sh
         green "# Successfully installed helm locally"
+        rm get_helm.sh
     fi
 }
 
