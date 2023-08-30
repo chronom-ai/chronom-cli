@@ -7,8 +7,9 @@ region=${args[--region]}
 version=${args[--version]}
 namespace=${args[--namespace]}
 
-adminRoleArn=$(aws iam get-role --role-name $clusterName-AdminRole --query 'Role.Arn' --output text)
-eksctl utils write-kubeconfig --cluster $clusterName --region $region --set-kubeconfig-context --authenticator-role-arn $adminRoleArn
+adminRoleArn=$(aws iam get-role --role-name "$clusterName-AdminRole" --query 'Role.Arn' --output text)
+eksctl utils write-kubeconfig --cluster "$clusterName" --region "$region" --set-kubeconfig-context --authenticator-role-arn "$adminRoleArn"
+kubectl config set-context --current --namespace "$namespace"
 
 green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
 
@@ -21,7 +22,16 @@ registryPassword=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .pa
 
 helm registry login "$registryAddress" --username "$registryUsername" --password "$registryPassword"
 
-helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version"
+helm get values -n "$namespace" chronom -o yaml > values.yaml
+
+rabbitPass=$(kubectl get secret --namespace "$namespace" rabbitmq-chronom -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
+
+rabbitErlangCookie=$(kubectl get secret --namespace "$namespace" rabbitmq-chronom -o jsonpath="{.data.rabbitmq-erlang-cookie}" | base64 -d)
+
+
+helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" -f ./values --set "rabbitmq.auth.password=$rabbitPass" --set "rabbitmq.auth.erlangCookie=$rabbitErlangCookie"
 
 green "# Done! Chronom has been upgraded to version ${args[--version]} in cluster ${args[--cluster-name]}"
 green "# Note that it might take a moment for the new version to completly replace the old one"
+
+rm ./values.yaml

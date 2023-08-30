@@ -99,12 +99,12 @@ chronomReadonlyClusterRole() {
     clusterName="$1"
     region="$2"
     chronomReadOnlyUsername="$3"
-    userArn=$(aws iam get-user --user-name $chronomReadOnlyUsername --query 'User.Arn' --output text)
+   roleArn=$(aws iam get-user --user-name "$chronomReadOnlyUsername-role" --query 'Role.Arn' --output text)
     
     yellow "# Generating Temporary Credentials for the EKS Cluster Kubernetes API Server"
-    token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
-    certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)
-    endpoint=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.endpoint" --output text)
+    token=$(aws eks get-token --cluster-name "$clusterName" --region "$region" --query "status.token" --output text)
+    certificate=$(aws eks describe-cluster --name "$clusterName" --region "$region" --query "cluster.certificateAuthority.data" --output text)
+    endpoint=$(aws eks describe-cluster --name "$clusterName" --region "$region" --query "cluster.endpoint" --output text)
     
     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
     echo $certificate | base64 -d > $pemFile
@@ -133,7 +133,7 @@ roleRef:
   name: chronomReadOnlyRole
   apiGroup: rbac.authorization.k8s.io
 EOF
-    eksctl create iamidentitymapping --cluster $clusterName --region $region --arn $userArn --group chronomReadOnlyGroup --username $chronomReadOnlyUsername
+    eksctl create iamidentitymapping --cluster "$clusterName" --region "$region" --arn "$roleArn" --group chronomReadOnlyGroup --username "$chronomReadOnlyUsername-role"
     
     rm $pemFile
 }
