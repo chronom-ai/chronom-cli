@@ -2482,7 +2482,7 @@ chronom_cli_upgrade_chronom_command() {
 
   rabbitErlangCookie=$(kubectl get secret --namespace "$namespace" rabbitmq-chronom -o jsonpath="{.data.rabbitmq-erlang-cookie}" | base64 -d)
 
-  helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" -f ./values --set "rabbitmq.auth.password=$rabbitPass" --set "rabbitmq.auth.erlangCookie=$rabbitErlangCookie"
+  helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" -f ./values.yaml --set "rabbitmq.auth.password=$rabbitPass" --set "rabbitmq.auth.erlangCookie=$rabbitErlangCookie"
 
   green "# Done! Chronom has been upgraded to version ${args[--version]} in cluster ${args[--cluster-name]}"
   green "# Note that it might take a moment for the new version to completly replace the old one"
