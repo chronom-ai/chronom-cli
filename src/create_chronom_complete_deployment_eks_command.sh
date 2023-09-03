@@ -107,9 +107,10 @@ fi
 ## Deploy Chronom Helm Chart
 yellow "# Deploying Chronom Helm Chart in the cluster $clusterName"
 
-# flatAccessKey=$(echo $accessKey | jq -c . )
+flatRoAccessKey=$(echo $roAccessKey | jq -c . )
+flatRwAccessKey=$(echo $rwAccessKey | jq -c . )
 
-chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $roAccessKey $rwAccessKey $ingressEnabled
+chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $flatRoAccessKey $flatRwAccessKey $ingressEnabled
 green "# Chronom Helm Chart deployed successfully"
 
 if [ ! ${args[--skip-ingress-setup]} ]; then

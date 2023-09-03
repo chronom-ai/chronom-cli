@@ -27,11 +27,21 @@ chronom_helm_install() {
     
     auth='{"clientId": "'$authClientId'", "clientSecret": "'$authClientSecret'"}'
     
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version $chronomVersion --set dnsRecord=$dnsRecord --set ingressEnabled=$ingressEnabled --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace $namespace --create-namespace
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version "$chronomVersion" --set "dnsRecord=$dnsRecord" --set "ingressEnabled=$ingressEnabled" --set "initRegion=$region" --set "secretRegion=$region" --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace "$namespace" --create-namespace
     
-    sleep 30
+    green "# Chronom A.I Helm Chart installed successfully"
+    yellow "# Waiting for Ingress resource provisioning"
+    sleep 10
     
     ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
+    
+    while [[ $ingressCname != *"$region.elb.amazonaws.com" ]]
+    do
+        yellow "# Still waiting for Ingress resource provisioning"
+        sleep 15
+        ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
+    done
+    green "# Ingress resource provisioned successfully - $ingressCname"
     
     rm $pemFile
 }

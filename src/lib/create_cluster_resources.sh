@@ -99,7 +99,7 @@ chronomReadonlyClusterRole() {
     clusterName="$1"
     region="$2"
     chronomReadOnlyUsername="$3"
-   roleArn=$(aws iam get-user --user-name "$chronomReadOnlyUsername-role" --query 'Role.Arn' --output text)
+   roleArn=$(aws iam get-role --role-name "$chronomReadOnlyUsername-role" --query 'Role.Arn' --output text)
     
     yellow "# Generating Temporary Credentials for the EKS Cluster Kubernetes API Server"
     token=$(aws eks get-token --cluster-name "$clusterName" --region "$region" --query "status.token" --output text)
@@ -137,87 +137,6 @@ EOF
     
     rm $pemFile
 }
-
-
-# create_cluster_complete(){
-#     clusterName="$1"
-#     region="$2"
-#     version="$3"
-#     nodeType="$4"
-#     minNodes="$5"
-#     maxNodes="$6"
-#     accountId="$7"
-
-#     ## Check if cluster name is available
-#     check_available_cluster_name $clusterName $region
-
-
-#     if [ ${args[--key-pair-name]} ]; then
-#         keyPairName=${args[--key-pair-name]}
-#         yellow "# Using existing RSA Key Pair: $keyPairName"
-#         sshKeysFlags="--ssh-access --ssh-public-key $keyPairName"
-
-#         elif [ ${args[--create-rsa-key]} ]; then
-#         yellow "# Creating a new RSA Key Pair"
-#         create_rsa_key_pair $clusterName $region
-#         green "# RSA Key Pair created successfully"
-#         green "# You can find the PEM file in $(pwd)/$clusterName-KeyPair.pem"
-#     fi
-
-#     yellow "# Creating a new EKS Cluster in the $region region"
-#     eksctl create cluster --name $clusterName --region $region --version $version --without-nodegroup --managed --with-oidc --alb-ingress-access --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access $sshKeysFlags
-#     green "# EKS Cluster created successfully"
-
-#     yellow "# Creating a new IAM Role with Admin Access for the Kubernetes API Server"
-#     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
-#     adminRoleArn=$(aws iam create-role --role-name $clusterName"-AdminRole" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}"  --query "Role.Arn" --output text)
-#     adminRolePolicyArn=$(aws iam create-policy --policy-name $clusterName"-AdminRolePolicy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\",\"eks:DescribeCluster\"],\"Resource\":[\"arn:aws:eks:$region:$accountId:cluster/$clusterName\"]}]}" --query 'Policy.Arn' --output text)
-#     aws iam attach-role-policy --role-name $clusterName"-AdminRole" --policy-arn $adminRolePolicyArn
-#     eksctl create iamidentitymapping --cluster $clusterName --region $region --arn $adminRoleArn --group system:masters --username admin
-#     green "# IAM Role with Admin Access for the Kubernetes API Server created successfully"
-
-#     yellow "# Generating Temporary Credentials for the EKS Cluster Kubernetes API Server"
-#     token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
-#     certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)
-#     endpoint=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.endpoint" --output text)
-
-#     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
-#     echo $certificate | base64 -d > $pemFile
-#     green "# Temporary Credentials generated successfully"
-
-#     yellow "# Creating VPC-CNI addon"
-#     create_vpc_cni_addon $clusterName $region
-#     green "# VPC-CNI addon configured successfully"
-
-#     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
-
-#     eksctl create nodegroup --cluster $clusterName --node-type $nodeType --nodes-min $minNodes --nodes-max $maxNodes $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region $region --alb-ingress-access --name $clusterName"-NodeGroup"
-#     green "# EKS NodeGroup created successfully"
-
-#     create_cluster_addons_bundle $clusterName $region
-
-#     yellow "# Deploying AWS Load Balancer Controller"
-#     create_cluster_elb_addon $clusterName $region $accountId
-#     green "# AWS Load Balancer Controller deployed successfully"
-
-#     yellow "# Deploying EBS CSI Driver"
-#     eksctl create iamserviceaccount --name ebs-csi-controller-sa --namespace kube-system --region $region --cluster $clusterName --role-name $clusterName"-AmazonEKSEBSCSIDriverRole" --role-only --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve || red "# Warning:"
-#     eksctl create addon --name aws-ebs-csi-driver --cluster $clusterName --region $region --service-account-role-arn arn:aws:iam::$accountId:role/$clusterName"-AmazonEKSEBSCSIDriverRole" --force
-#     if [ ! ${args[--skip-gp3-setup]} ]; then
-#         gp3StorageClass
-#     fi
-#     green "# EBS CSI Driver deployed successfully"
-
-#     if [ ! ${args[--skip-calico-setup]} ]; then
-#         yellow "# Deploying Calico CNI"
-#         calicoClusterRole
-#         green "# Calico CNI deployed successfully"
-#     fi
-
-#     rm $pemFile
-# }
-
-
 
 
 create_cluster_complete(){
@@ -279,16 +198,20 @@ create_cluster_complete(){
     
     yellow "# Deploying EBS CSI Driver"
     eksctl create iamserviceaccount --name ebs-csi-controller-sa --namespace kube-system --region $region --cluster $clusterName --role-name $clusterName"-AmazonEKSEBSCSIDriverRole" --role-only --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve || red "# Warning:"
-    eksctl create addon --name aws-ebs-csi-driver --cluster $clusterName --region $region --service-account-role-arn arn:aws:iam::$accountId:role/$clusterName"-AmazonEKSEBSCSIDriverRole" --force
+    eksctl create addon --name aws-ebs-csi-driver --version latest --cluster $clusterName --region $region --service-account-role-arn arn:aws:iam::$accountId:role/$clusterName"-AmazonEKSEBSCSIDriverRole" --force
     if [ ! ${args[--skip-gp3-setup]} ]; then
         gp3StorageClass
     fi
     green "# EBS CSI Driver deployed successfully"
     
-    if [ ! ${args[--skip-calico-setup]} ]; then
+    if [ ${args[--setup-calico-cni]} ]; then
         yellow "# Deploying Calico CNI"
         calicoClusterRole
         green "# Calico CNI deployed successfully"
+    else
+        yellow "# Configuring AWS VPC CNI to support Network Policies"
+        aws eks update-addon --cluster-name "$clusterName" --region "$region" --addon-name vpc-cni --resolve-conflicts PRESERVE --configuration-values '{"enableNetworkPolicy": "true"}'
+        green "# AWS VPC CNI configured successfully"
     fi
     
     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
