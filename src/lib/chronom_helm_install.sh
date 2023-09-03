@@ -37,11 +37,10 @@ chronom_helm_install() {
     
     while [[ $ingressCname != *"$region.elb.amazonaws.com" ]]
     do
-        yellow "# Still waiting for Ingress resource provisioning"
         sleep 15
         ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
     done
-    green "# Ingress resource provisioned successfully - $ingressCname"
+    green "# Ingress resource provisioned successfully"
     
     rm $pemFile
 }

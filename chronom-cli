@@ -1125,11 +1125,10 @@ chronom_helm_install() {
 
     while [[ $ingressCname != *"$region.elb.amazonaws.com" ]]
     do
-        yellow "# Still waiting for Ingress resource provisioning"
         sleep 15
         ingressCname=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile get ingress -n $namespace -o jsonpath='{.items[].status.loadBalancer.ingress[0].hostname}')
     done
-    green "# Ingress resource provisioned successfully - $ingressCname"
+    green "# Ingress resource provisioned successfully"
 
     rm $pemFile
 }
@@ -2209,6 +2208,7 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   green_bold "# Congratulations! Your Chronom cluster is ready to use"
   green_bold "# If ever needed, an IAM Role $clusterName-AdminRole was created with Administrator Access to the Cluster API Server"
   green_bold "# You can access Chronom at https://$dnsRecord"
+  green_bold "# Cluster Name: $clusterName in region $region"
 
 }
 
