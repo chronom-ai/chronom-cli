@@ -304,7 +304,7 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-version CHRONOM-VERSION")"
     printf "    The Chronom A.I. Version to install.\n    Defaults to the latest version at the time of release.\n"
-    printf "    Default: 0.0.5\n"
+    printf "    Default: 0.0.6\n"
     echo
 
     printf "  %s\n" "$(yellow "--chronom-namespace CHRONOM-NAMESPACE")"
@@ -1238,6 +1238,21 @@ create_rsa_key_pair() {
     mkdir -p ~/.ssh
     aws ec2 create-key-pair --key-name "$clusterName-KeyPair" --region $region --query "KeyMaterial" --output text > ~/.ssh/$clusterName-KeyPair.pem
     sshKeysFlags="--ssh-access --ssh-public-key $clusterName-KeyPair"
+}
+
+create_kms_key() {
+  clusterName="$1"
+  region="$2"
+  yellow "# Creating KMS Key"
+  kmsKeyArn=$(aws kms create-key --region "$region" --description "$clusterName-kms-key" --query "KeyMetadata.Arn" --output text)
+  green "# KMS Key created successfully"
+  yellow "# Creating KMS Key Alias"
+  aws kms create-alias --alias-name "alias/$clusterName-kms-key" --target-key-id "$kmsKeyArn" --region "$region"
+  green "# KMS Key Alias created successfully"
+  yellow "# Configuring Cluster Encryption"
+  eksctl utils enable-secrets-encryption --cluster "$clusterName" --key-arn "$kmsKeyArn" --region "$region"
+  green "# Cluster Encryption configured successfully"
+
 }
 
 create_vpc_cni_addon() {
@@ -2294,15 +2309,20 @@ chronom_cli_delete_chronom_cluster_eks_command() {
   eksctl delete cluster --name ${args[--name]} --region ${args[--region]} || red "Cluster not found"
   green "# Successfull deleted cluster ${args[--name]} in region ${args[--region]}"
   yellow "# Deleting Admin Role ${args[--name]}-AdminRole"
+  clusterName="${args[--name]}"
   roleName="${args[--name]}-AdminRole"
   accountId=$(aws sts get-caller-identity --query 'Account' --output text)
   rolePolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/${roleName}Policy" --query 'Policy.Arn' --output text) || red "Role Policy not found"
 
-  aws iam detach-role-policy --role-name $roleName --policy-arn $rolePolicyArn || red "Admin Role not found"
+  lbControllerPolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/$clusterName-AWSLoadBalancerControllerIAMPolicy" --query 'Policy.Arn' --output text) || red "Load Balancer Policy not found - skipping"
 
-  aws iam delete-policy --policy-arn $rolePolicyArn || red "Admin Role Policy not found"
+  aws iam detach-role-policy --role-name "$roleName" --policy-arn "$rolePolicyArn" || red "Admin Role not found"
 
-  aws iam delete-role --role-name $roleName || red "Admin Role not found"
+  aws iam delete-policy --policy-arn "$rolePolicyArn" || red "Admin Role Policy not found"
+
+  aws iam delete-role --role-name "$roleName" || red "Admin Role not found"
+
+  aws iam delete-policy --policy-arn "$lbControllerPolicyArn" || red "Load Balancer Policy not found - skipping"
 
   green "# Successfull deleted Admin Role ${args[--name]}-AdminRole"
   green "# Deletion of cluster ${args[--name]} in region ${args[--region]} completed successfully"
@@ -3301,7 +3321,7 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
   [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="2"
   [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="10"
-  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.5"
+  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.6"
   [[ -n ${args['--chronom-namespace']:-} ]] || args['--chronom-namespace']="chronom"
   [[ -n ${args['--chronom-registry-name']:-} ]] || args['--chronom-registry-name']="chronomprodacr.azurecr.io"
 

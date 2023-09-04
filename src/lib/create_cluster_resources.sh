@@ -10,6 +10,21 @@ create_rsa_key_pair() {
     sshKeysFlags="--ssh-access --ssh-public-key $clusterName-KeyPair"
 }
 
+create_kms_key() {
+  clusterName="$1"
+  region="$2"
+  yellow "# Creating KMS Key"
+  kmsKeyArn=$(aws kms create-key --region "$region" --description "$clusterName-kms-key" --query "KeyMetadata.Arn" --output text)
+  green "# KMS Key created successfully"
+  yellow "# Creating KMS Key Alias"
+  aws kms create-alias --alias-name "alias/$clusterName-kms-key" --target-key-id "$kmsKeyArn" --region "$region"
+  green "# KMS Key Alias created successfully"
+  yellow "# Configuring Cluster Encryption"
+  eksctl utils enable-secrets-encryption --cluster "$clusterName" --key-arn "$kmsKeyArn" --region "$region"
+  green "# Cluster Encryption configured successfully"
+
+}
+
 create_vpc_cni_addon() {
     clusterName="$1"
     region="$2"
