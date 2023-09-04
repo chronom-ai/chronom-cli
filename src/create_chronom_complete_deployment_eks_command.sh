@@ -107,9 +107,10 @@ fi
 ## Deploy Chronom Helm Chart
 yellow "# Deploying Chronom Helm Chart in the cluster $clusterName"
 
-# flatAccessKey=$(echo $accessKey | jq -c . )
+flatRoAccessKey=$(echo $roAccessKey | jq -c . )
+flatRwAccessKey=$(echo $rwAccessKey | jq -c . )
 
-chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $roAccessKey $rwAccessKey $ingressEnabled
+chronom_helm_install $clusterName $region $chronomRegistry $chronomRegistryUsername $chronomRegistryPassword $chronomAuthId $chronomAuthSecret $dnsRecord $chronomVersion $chronomNamespace $flatRoAccessKey $flatRwAccessKey $ingressEnabled
 green "# Chronom Helm Chart deployed successfully"
 
 if [ ! ${args[--skip-ingress-setup]} ]; then
@@ -125,3 +126,4 @@ sleep 120
 green_bold "# Congratulations! Your Chronom cluster is ready to use"
 green_bold "# If ever needed, an IAM Role $clusterName-AdminRole was created with Administrator Access to the Cluster API Server"
 green_bold "# You can access Chronom at https://$dnsRecord"
+green_bold "# Cluster Name: $clusterName in region $region"
