@@ -89,6 +89,7 @@ provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
   type: gp3
+  encrypted: "true"
 EOF
 }
 
