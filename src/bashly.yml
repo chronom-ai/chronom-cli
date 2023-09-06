@@ -400,11 +400,11 @@ commands:
         help: The AWS region where the cluster is located
         required: true
         repeatable: false
-      - long: --chronom-readonly-username
-        arg: chronom-readonly-username
+      - long: --chronom-readonly-roleArn
+        arg: chronom-readonly-roleArn
         help: |-
-          The name of the Chronom Read Only User to configure.
-          Usually this is the name of the cluster with '-ro-user' appended.
+          The ARN of the Chronom Read Only Role.
+          This value is shown in the property "clusterCommand" in the EKS object in chronom.
         required: true
         repeatable: false
 
