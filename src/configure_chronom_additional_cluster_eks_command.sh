@@ -1,10 +1,10 @@
-yellow "# Adding ${args[--chronom-readonly-username]} to ${args[--cluster-name]} in ${args[--region]} region"
+yellow "# Adding ${args[--chronom-readonly-roleArn]} to ${args[--cluster-name]} in ${args[--region]} region"
 
 ## Parametrs normalization
 clusterName=${args[--cluster-name]}
 region=${args[--region]}
-chronomReadonlyUsername=${args[--chronom-readonly-username]}
+chronomReadonlyRoleArn=${args[--chronom-readonly-roleArn]}
 
-chronomReadonlyClusterRole $clusterName $region $chronomReadonlyUsername
+configure_additional_cluster_eks "$clusterName" "$region" "$chronomReadonlyRoleArn"
 
 green "# Done, You can now Scan the cluster with Chronom"

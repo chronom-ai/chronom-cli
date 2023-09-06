@@ -881,8 +881,8 @@ chronom_cli_configure_chronom_additional_cluster_eks_usage() {
     printf "    The AWS region where the cluster is located\n"
     echo
 
-    printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USERNAME (required)")"
-    printf "    The name of the Chronom Read Only User to configure.\n    Usually this is the name of the cluster with '-ro-user' appended.\n"
+    printf "  %s\n" "$(yellow "--chronom-readonly-roleArn CHRONOM-READONLY-ROLEARN (required)")"
+    printf "    The ARN of the Chronom Read Only Role.\n    This value is shown in the property \"clusterCommand\" in the EKS object in\n    chronom.\n"
     echo
 
     printf "  %s\n" "$(yellow "--help, -h")"
@@ -1163,6 +1163,50 @@ yellow_underlined() { print_in_color "\e[4;33m" "$*"; }
 blue_underlined() { print_in_color "\e[4;34m" "$*"; }
 magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
 cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
+
+configure_additional_cluster_eks() {
+    clusterName="$1"
+    region="$2"
+    chronomReadonlyRoleArn="$3"
+
+    chronomReadOnlyRoleName=$(echo "$chronomReadonlyRoleArn" | cut -d'/' -f2)
+
+    yellow "# Generating Temporary Credentials for the EKS Cluster Kubernetes API Server"
+    token=$(aws eks get-token --cluster-name "$clusterName" --region "$region" --query "status.token" --output text)
+    certificate=$(aws eks describe-cluster --name "$clusterName" --region "$region" --query "cluster.certificateAuthority.data" --output text)
+    endpoint=$(aws eks describe-cluster --name "$clusterName" --region "$region" --query "cluster.endpoint" --output text)
+
+    pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
+    echo $certificate | base64 -d > $pemFile
+    green "# Temporary Credentials generated successfully"
+
+  kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chronomReadOnlyRole
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chronomReadOnlyRoleBinding
+subjects:
+- kind: Group
+  name: chronomReadOnlyGroup
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: chronomReadOnlyRole
+  apiGroup: rbac.authorization.k8s.io
+EOF
+    eksctl create iamidentitymapping --cluster "$clusterName" --region "$region" --arn "$chronomReadonlyRoleArn" --group chronomReadOnlyGroup --username "$chronomReadOnlyRoleName"
+
+    rm $pemFile
+}
 
 create_asm_secret() {
     clusterName="$1"
@@ -1724,7 +1768,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'configure chronom additional-cluster-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--chronom-readonly-username --cluster-name --help --region -h")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--chronom-readonly-roleArn --cluster-name --help --region -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create chronom complete-deployment-eks\'*)'
@@ -2388,13 +2432,13 @@ chronom_cli_setup_cloudshell_command() {
 }
 
 chronom_cli_configure_chronom_additional_cluster_eks_command() {
-  yellow "# Adding ${args[--chronom-readonly-username]} to ${args[--cluster-name]} in ${args[--region]} region"
+  yellow "# Adding ${args[--chronom-readonly-roleArn]} to ${args[--cluster-name]} in ${args[--region]} region"
 
   clusterName=${args[--cluster-name]}
   region=${args[--region]}
-  chronomReadonlyUsername=${args[--chronom-readonly-username]}
+  chronomReadonlyRoleArn=${args[--chronom-readonly-roleArn]}
 
-  chronomReadonlyClusterRole $clusterName $region $chronomReadonlyUsername
+  configure_additional_cluster_eks "$clusterName" "$region" "$chronomReadonlyRoleArn"
 
   green "# Done, You can now Scan the cluster with Chronom"
 }
@@ -4488,15 +4532,15 @@ chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
         fi
         ;;
 
-      --chronom-readonly-username)
+      --chronom-readonly-roleArn)
 
         if [[ -n ${2+x} ]]; then
 
-          args['--chronom-readonly-username']="$2"
+          args['--chronom-readonly-roleArn']="$2"
           shift
           shift
         else
-          printf "%s\n" "--chronom-readonly-username requires an argument: --chronom-readonly-username CHRONOM-READONLY-USERNAME" >&2
+          printf "%s\n" "--chronom-readonly-roleArn requires an argument: --chronom-readonly-roleArn CHRONOM-READONLY-ROLEARN" >&2
           exit 1
         fi
         ;;
@@ -4524,8 +4568,8 @@ chronom_cli_configure_chronom_additional_cluster_eks_parse_requirements() {
     printf "missing required flag: --region REGION\n" >&2
     exit 1
   fi
-  if [[ -z ${args['--chronom-readonly-username']+x} ]]; then
-    printf "missing required flag: --chronom-readonly-username CHRONOM-READONLY-USERNAME\n" >&2
+  if [[ -z ${args['--chronom-readonly-roleArn']+x} ]]; then
+    printf "missing required flag: --chronom-readonly-roleArn CHRONOM-READONLY-ROLEARN\n" >&2
     exit 1
   fi
 
