@@ -130,6 +130,7 @@ commands:
         help: The name of the EKS Cluster that will be created
         completions:
         - "chronom-cluster"
+        validate: eks_cluster_name_length
 
       - long: --region
         short: -r

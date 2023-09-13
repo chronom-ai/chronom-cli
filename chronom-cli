@@ -2082,6 +2082,10 @@ validate_dir_exists() {
   [[ -d "$1" ]] || echo "must be an existing directory"
 }
 
+validate_eks_cluster_name_length() {
+  [[ ${#1} -le 14 ]] || echo "must be less than or equal to 14 characters"
+}
+
 validate_file_exists() {
   [[ -f "$1" ]] || echo "must be an existing file"
 }
@@ -3085,6 +3089,11 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
       --name | -n)
 
         if [[ -n ${2+x} ]]; then
+
+          if [[ -n $(validate_eks_cluster_name_length "$2") ]]; then
+            printf "validation error in %s:\n%s\n" "--name, -n NAME" "$(validate_eks_cluster_name_length "$2")" >&2
+            exit 1
+          fi
 
           args['--name']="$2"
           shift
