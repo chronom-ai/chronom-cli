@@ -270,12 +270,12 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--min-nodes MIN-NODES")"
     printf "    The minimum number of nodes to use\n"
-    printf "    Default: 2\n"
+    printf "    Default: 4\n"
     echo
 
     printf "  %s\n" "$(yellow "--max-nodes MAX-NODES")"
     printf "    The maximum number of nodes to use\n"
-    printf "    Default: 10\n"
+    printf "    Default: 25\n"
     echo
 
     printf "  %s\n" "$(yellow "--skip-gp3-setup")"
@@ -304,7 +304,7 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-version CHRONOM-VERSION")"
     printf "    The Chronom A.I. Version to install.\n    Defaults to the latest version at the time of release.\n"
-    printf "    Default: 0.0.6\n"
+    printf "    Default: 0.0.12\n"
     echo
 
     printf "  %s\n" "$(yellow "--chronom-namespace CHRONOM-NAMESPACE")"
@@ -3364,9 +3364,9 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
 
   [[ -n ${args['--version']:-} ]] || args['--version']="1.27"
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
-  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="2"
-  [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="10"
-  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.6"
+  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="4"
+  [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="25"
+  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.12"
   [[ -n ${args['--chronom-namespace']:-} ]] || args['--chronom-namespace']="chronom"
   [[ -n ${args['--chronom-registry-name']:-} ]] || args['--chronom-registry-name']="chronomprodacr.azurecr.io"
 
