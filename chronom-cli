@@ -1102,6 +1102,7 @@ chronom_helm_install() {
     ingressEnabled="${13}"
     yellow "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
 
+
     token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
     certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)
     endpoint=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.endpoint" --output text)
@@ -1109,13 +1110,13 @@ chronom_helm_install() {
     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
     echo $certificate | base64 -d > $pemFile
 
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword || (echo -e "Failed to login to registry with command: \n |helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword|" && exit 1)
 
     imageCredentials='{"registry": "'$registry'","username": "'$registryUsername'","password": "'$registryPassword'"}'
 
     auth='{"clientId": "'$authClientId'", "clientSecret": "'$authClientSecret'"}'
 
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version "$chronomVersion" --set "dnsRecord=$dnsRecord" --set "ingressEnabled=$ingressEnabled" --set "initRegion=$region" --set "secretRegion=$region" --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace "$namespace" --create-namespace
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version "$chronomVersion" --set "dnsRecord=$dnsRecord" --set "ingressEnabled=$ingressEnabled" --set "initRegion=$region" --set "secretRegion=$region" --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace "$namespace" --create-namespace || (echo -e "Failed to install HelmChart with command: \n |helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version \"$chronomVersion\" --set \"dnsRecord=$dnsRecord\" --set \"ingressEnabled=$ingressEnabled\" --set \"initRegion=$region\" --set \"secretRegion=$region\" --set-json=\"auth=$auth\" --set-json=\"imageCredentials=$imageCredentials\" --set-json=\"backend=$rwAccessKey\" --set-json \"awsscanner=$roAccessKey\" --namespace \"$namespace\" --create-namespace|" && exit 1)
 
     green "# Chronom A.I Helm Chart installed successfully"
     yellow "# Waiting for Ingress resource provisioning"
@@ -1217,7 +1218,7 @@ create_asm_secret() {
     asmRwUserName="$clusterName-aws-credentials-$chronomAuthId-rw-user"
 
     cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
-    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\"}]"
+    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\",\"accountName\":\"Default Account\"}]"
     secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
 
     # Create ReadOnly ASM User
@@ -1326,6 +1327,13 @@ create_cluster_addons_bundle() {
     eksctl create addon --name kube-proxy --cluster $clusterName --version latest --region $region --force
     eksctl create addon --name coredns --cluster $clusterName --version latest --region $region --force
     green "# KUBE-PROXY & COREDNS addons deployed successfully"
+
+    yellow "# Deploying Keda Operator"
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo add kedacore https://kedacore.github.io/charts
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo update
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install keda kedacore/keda --namespace keda --create-namespace
+    green "# Keda Operator deployed successfully"
+
 }
 
 create_cluster_elb_addon() {
@@ -2156,6 +2164,15 @@ chronom_cli_create_chronom_user_iam_command() {
 }
 
 chronom_cli_create_chronom_complete_deployment_eks_command() {
+  green_bold "# Thank you for choosing Chronom"
+  green_bold '# Please type "yes" to confirm your concent to Chronom`s Terms of Use and EULA'
+  read -r tmsEula
+  echo
+  if [ "${tmsEula,,}" != "yes" ]; then
+      red_bold 'You must agree to Chronom`s Terms of Use and EULA to proceed'
+      exit 1
+  fi
+  green '# Thank you for agreeing to Chronom`s Terms of Use and EULA'
   yellow "# Creating a new EKS Cluster in the ${args[--region]} region for Chronom"
   yellow "# Cluster Name: ${args[--name]}"
   yellow "# Cluster Version: ${args[--version]}"

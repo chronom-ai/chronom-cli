@@ -54,6 +54,13 @@ create_cluster_addons_bundle() {
     eksctl create addon --name kube-proxy --cluster $clusterName --version latest --region $region --force
     eksctl create addon --name coredns --cluster $clusterName --version latest --region $region --force
     green "# KUBE-PROXY & COREDNS addons deployed successfully"
+
+    yellow "# Deploying Keda Operator"
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo add kedacore https://kedacore.github.io/charts
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo update
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install keda kedacore/keda --namespace keda --create-namespace
+    green "# Keda Operator deployed successfully"
+
 }
 
 create_cluster_elb_addon() {
