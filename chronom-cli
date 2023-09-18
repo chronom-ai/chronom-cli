@@ -1296,6 +1296,11 @@ configure_additional_cluster_eks() {
         if [ "$canI" == "no" ]; then
             red "# User does not have access to the cluster"
             red "# Please execute the command with a user that has access to the cluster"
+            if [[ -n $chronomPublicIp ]]; then
+                yellow "# Removing CloudShell Public IP from allowed CIDRs, please stand by"
+                eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --approve
+                green "# CloudShell Public IP removed from allowed CIDRs"
+            fi
             exit 1
         fi
         green "# User has access to the cluster, proceeding with the configuration"
