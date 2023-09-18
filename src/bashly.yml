@@ -376,6 +376,8 @@ commands:
         openssl: install openssl - https://www.openssl.org/source/
   - name: cloudshell
     help: Setup cloudshell environment with all dependencies for chronom-cli
+  - name: dig
+    help: Installs dig
     dependencies:
       curl: install curl - https://curl.se/download.html
       tar: install tar - https://linuxize.com/post/how-to-extract-unzip-tar-gz-file/
@@ -387,6 +389,19 @@ commands:
   commands:
   - name: chronom
     help: Configure an Object to use Chronom A.I.
+    dependencies:
+      aws: |-
+        Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+        Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+      kubectl: |-
+        Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+        Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+      eksctl: |-
+        Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+        Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+      dig: |-
+        Please run './chronom-cli setup install dig' to install dig - https://linuxize.com/post/how-to-use-dig-command-to-query-dns-in-linux/
+        Alternatively you can install dig by following the official guide - https://linuxize.com/post/how-to-use-dig-command-to-query-dns-in-linux/
     commands:
     - name: additional-cluster-eks
       help: Configures the EKS Cluster to allow Chronom Read Only user to access the cluster Kubernetes API Server
@@ -408,7 +423,13 @@ commands:
           This value is shown in the property "clusterCommand" in the EKS object in chronom.
         required: true
         repeatable: false
-
+      - long: --chronom-public-ip
+        arg: chronom-public-ip
+        help: |-
+          The Public Ip address of chronom.
+          If not provided in the EKS Cluster clusterCommand object, please find it by going to the EKS Cluster in your AWS Console.
+        required: false
+        repeatable: false
   - name: kube-context
     alias: k
     help: Configure the current Kubernetes context to use Chronom A.I.
