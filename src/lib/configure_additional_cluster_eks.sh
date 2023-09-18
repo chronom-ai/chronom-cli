@@ -3,6 +3,7 @@ configure_additional_cluster_eks() {
     region="$2"
     chronomReadonlyRoleArn="$3"
     chronomPublicIp="$4"
+    currentIp="$5"
     
     chronomReadOnlyRoleName=$(echo "$chronomReadonlyRoleArn" | cut -d'/' -f2)
     
@@ -32,9 +33,10 @@ configure_additional_cluster_eks() {
     
     
     if [[ -n $chronomPublicIp ]]; then
+        permittedAddresses="${chronomPublicIp},${currentIp}/32"
         yellow "# Configuring the cluster to be accessible only from Chronom's IP"
         yellow "# This will take a few minutes, please stand by"
-        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --aprove
+        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$permittedAddresses" --aprove
         eksctl utils update-cluster-endpoints --cluster "$clusterName" --region "$region" --public-access=true --private-access=true --approve
         green "# Cluster configured to be accessible only from Chronom's IP"
         yellow "# Checking wether user has access to the cluster"
@@ -83,6 +85,14 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 EOF
     eksctl create iamidentitymapping --cluster "$clusterName" --region "$region" --arn "$chronomReadonlyRoleArn" --group chronomReadOnlyGroup --username "$chronomReadOnlyRoleName"
+    
+    
+    if [[ -n $chronomPublicIp ]]; then
+        yellow "# Removing CloudShell Public IP from allowed CIDRs, please stand by"
+        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --aprove
+        green "# CloudShell Public IP removed from allowed CIDRs"
+        green "# Process completed, you can now scan the cluster with Chronom"
+    fi
     
     rm $pemFile
 }
