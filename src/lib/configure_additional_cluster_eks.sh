@@ -2,6 +2,7 @@ configure_additional_cluster_eks() {
     clusterName="$1"
     region="$2"
     chronomReadonlyRoleArn="$3"
+    chronomPublicIp="$4"
     
     chronomReadOnlyRoleName=$(echo "$chronomReadonlyRoleArn" | cut -d'/' -f2)
     
@@ -13,6 +14,50 @@ configure_additional_cluster_eks() {
     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
     echo $certificate | base64 -d > $pemFile
     green "# Temporary Credentials generated successfully"
+    
+    if [[ -z $chronomPublicIp ]]; then
+        
+        yellow "# Checking wether the cluster is private or public"
+        endpointIp=$(dig +short "$(echo $endpoint | sed 's/https:\/\///g')" | head -n1)
+        if [[ $endpointIp =~ ^10\. || $endpointIp =~ ^172\.1[6-9]\. || $endpointIp =~ ^172\.2[0-9]\. || $endpointIp =~ ^172\.3[0-1]\. || $endpointIp =~ ^192\.168\. ]]; then
+            red "# Cluster is private"
+            red "# Unfortunately, we do not support private clusters at the moment"
+            red "# Please add --chronom-public-ip and the public IP of Chronom to the command and try again"
+            exit 1
+        else
+            green "# Cluster is reachable from the internet"
+            green "# Proceeding with the configuration"
+        fi
+    fi
+    
+    
+    if [[ -n $chronomPublicIp ]]; then
+        yellow "# Configuring the cluster to be accessible only from Chronom's IP"
+        yellow "# This will take a few minutes, please stand by"
+        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --aprove
+        eksctl utils update-cluster-endpoints --cluster "$clusterName" --region "$region" --public-access=true --private-access=true --approve
+        green "# Cluster configured to be accessible only from Chronom's IP"
+        yellow "# Checking wether user has access to the cluster"
+        canI=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile auth can-i '*' '*' --all-namespaces || echo "no")
+        if [ "$canI" == "no" ]; then
+            red "# User does not have access to the cluster"
+            red "# Please execute the command with a user that has access to the cluster"
+            red "# You may locate that information by going trough your Account's CloudTrail Event History - CreateCluster API calls"
+            red "# For more information please go to - https://www.doit.com/resolving-the-your-current-user-or-role-does-not-have-access-to-kubernetes-objects-problem-on-aws-eks/"
+            exit 1
+        fi
+        green "# User has access to the cluster, proceeding with the configuration"
+    else
+        yellow "# Checking wether user has access to the cluster"
+        canI=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile auth can-i '*' '*' --all-namespaces || echo "no")
+        if [ "$canI" == "no" ]; then
+            red "# User does not have access to the cluster"
+            red "# Please execute the command with a user that has access to the cluster"
+            exit 1
+        fi
+        green "# User has access to the cluster, proceeding with the configuration"
+    fi
+    
     
   kubectl --server $endpoint --token $token --certificate-authority $pemFile apply -f - <<EOF
 apiVersion: rbac.authorization.k8s.io/v1

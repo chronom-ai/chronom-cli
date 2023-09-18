@@ -111,3 +111,24 @@ install_kubectl() {
         green "# Successfully installed kubectl locally"
     fi
 }
+
+install_dig() {
+    yellow "# Checking OS package manager"
+    if command -v apt >/dev/null 2>&1; then
+        yellow "# Detected apt package manager"
+        yellow "# Installing dig"
+        sudo apt update
+        sudo apt install -y dnsutils
+        green "# Successfully installed dig"
+    elif command -v yum >/dev/null 2>&1; then
+        yellow "# Detected yum package manager"
+        yellow "# Installing dig"
+        sudo yum update
+        sudo yum install -y bind-utils
+        green "# Successfully installed dig"
+    else
+        red "# OS package manager not found"
+        red "# Please install bind-utils manually"
+        exit 1
+    fi
+}

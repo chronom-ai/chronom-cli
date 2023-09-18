@@ -4,6 +4,8 @@ yellow "# Installing OpenSSL"
 
 sudo yum install -y openssl
 
+install_dig
+
 install_eksctl
 
 install_helm
