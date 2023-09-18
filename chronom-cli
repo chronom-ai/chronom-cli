@@ -950,7 +950,8 @@ chronom_cli_upgrade_usage() {
   echo
 
   printf "%s\n" "$(bold "Commands:")"
-  printf "  %s   Upgrade Chronom Version\n" "$(green "chronom")"
+  printf "  %s   Upgrade Chronom Version\n" "$(green "chronom")     "
+  printf "  %s   Upgrade Chronom Version with Keda installation\n" "$(green "chronom-keda")"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -977,6 +978,49 @@ chronom_cli_upgrade_chronom_usage() {
   printf "%s\n" "$(bold "Usage:")"
   printf "  chronom-cli upgrade chronom [OPTIONS]\n"
   printf "  chronom-cli upgrade chronom --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--version, -v VERSION (required)")"
+    printf "    The Chronom A.I. Version to upgrade to\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--cluster-name, -n CLUSTER-NAME (required)")"
+    printf "    The name of the EKS Cluster where chronom is installed - usually\n    chronom-cluster\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--region, -r REGION (required)")"
+    printf "    The AWS region where the EKS Cluster is located\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--namespace NAMESPACE")"
+    printf "    Namespace where chronom is installed - usually chronom\n"
+    printf "    Default: chronom\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_upgrade_chronom_keda_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli upgrade chronom-keda - Upgrade Chronom Version with Keda installation\n"
+    echo
+
+  else
+    printf "chronom-cli upgrade chronom-keda - Upgrade Chronom Version with Keda installation\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli upgrade chronom-keda [OPTIONS]\n"
+  printf "  chronom-cli upgrade chronom-keda --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -1102,6 +1146,7 @@ chronom_helm_install() {
     ingressEnabled="${13}"
     yellow "# Installing Chronom A.I Helm Chart in the cluster $clusterName"
 
+
     token=$(aws eks get-token --cluster-name $clusterName --region $region --query "status.token" --output text)
     certificate=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.certificateAuthority.data" --output text)
     endpoint=$(aws eks describe-cluster --name $clusterName --region $region --query "cluster.endpoint" --output text)
@@ -1109,13 +1154,13 @@ chronom_helm_install() {
     pemFile=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1).pem
     echo $certificate | base64 -d > $pemFile
 
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword || (echo -e "Failed to login to registry with command: \n |helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile registry login $registry --username $registryUsername --password $registryPassword|" && exit 1)
 
     imageCredentials='{"registry": "'$registry'","username": "'$registryUsername'","password": "'$registryPassword'"}'
 
     auth='{"clientId": "'$authClientId'", "clientSecret": "'$authClientSecret'"}'
 
-    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version "$chronomVersion" --set "dnsRecord=$dnsRecord" --set "ingressEnabled=$ingressEnabled" --set "initRegion=$region" --set "secretRegion=$region" --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace "$namespace" --create-namespace
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version "$chronomVersion" --set "dnsRecord=$dnsRecord" --set "ingressEnabled=$ingressEnabled" --set "initRegion=$region" --set "secretRegion=$region" --set-json="auth=$auth" --set-json="imageCredentials=$imageCredentials" --set-json="backend=$rwAccessKey" --set-json "awsscanner=$roAccessKey" --namespace "$namespace" --create-namespace || (echo -e "Failed to install HelmChart with command: \n |helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install chronom oci://$registry/helm/chronom --version \"$chronomVersion\" --set \"dnsRecord=$dnsRecord\" --set \"ingressEnabled=$ingressEnabled\" --set \"initRegion=$region\" --set \"secretRegion=$region\" --set-json=\"auth=$auth\" --set-json=\"imageCredentials=$imageCredentials\" --set-json=\"backend=$rwAccessKey\" --set-json \"awsscanner=$roAccessKey\" --namespace \"$namespace\" --create-namespace|" && exit 1)
 
     green "# Chronom A.I Helm Chart installed successfully"
     yellow "# Waiting for Ingress resource provisioning"
@@ -1217,7 +1262,7 @@ create_asm_secret() {
     asmRwUserName="$clusterName-aws-credentials-$chronomAuthId-rw-user"
 
     cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
-    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\"}]"
+    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\",\"accountName\":\"Default Account\"}]"
     secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
 
     # Create ReadOnly ASM User
@@ -1326,6 +1371,13 @@ create_cluster_addons_bundle() {
     eksctl create addon --name kube-proxy --cluster $clusterName --version latest --region $region --force
     eksctl create addon --name coredns --cluster $clusterName --version latest --region $region --force
     green "# KUBE-PROXY & COREDNS addons deployed successfully"
+
+    yellow "# Deploying Keda Operator"
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo add kedacore https://kedacore.github.io/charts
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile repo update
+    helm --kube-apiserver $endpoint --kube-token $token --kube-ca-file $pemFile install keda kedacore/keda --namespace keda --create-namespace
+    green "# Keda Operator deployed successfully"
+
 }
 
 create_cluster_elb_addon() {
@@ -1783,6 +1835,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'upgrade chronom-keda\'*\'--cluster-name\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'c chronom complete-deployment-eks\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
@@ -1801,6 +1857,10 @@ send_completions() {
   echo $''
   echo $'    \'configure kube-context\'*\'--name\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom-keda\'*\'--region\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create cluster-eks\'*\'--region\')'
@@ -1841,6 +1901,14 @@ send_completions() {
   echo $''
   echo $'    \'delete chronom user-iam\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name -h -n")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom-keda\'*\'-n\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-cluster")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom-keda\'*\'-r\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c cluster-eks\'*\'--region\')'
@@ -1889,6 +1957,10 @@ send_completions() {
   echo $''
   echo $'    \'configure k\'*\'--region\')'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade chronom-keda\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--cluster-name --help --namespace --region --version -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'setup auto-complete\'*)'
@@ -2024,7 +2096,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'upgrade\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom chronom-keda")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create\'*)'
@@ -2156,6 +2228,15 @@ chronom_cli_create_chronom_user_iam_command() {
 }
 
 chronom_cli_create_chronom_complete_deployment_eks_command() {
+  green_bold "# Thank you for choosing Chronom"
+  green_bold '# Please type "yes" to confirm your concent to Chronom`s Terms of Use and EULA'
+  read -r tmsEula
+  echo
+  if [ "${tmsEula,,}" != "yes" ]; then
+      red_bold 'You must agree to Chronom`s Terms of Use and EULA to proceed'
+      exit 1
+  fi
+  green '# Thank you for agreeing to Chronom`s Terms of Use and EULA'
   yellow "# Creating a new EKS Cluster in the ${args[--region]} region for Chronom"
   yellow "# Cluster Name: ${args[--name]}"
   yellow "# Cluster Version: ${args[--version]}"
@@ -2479,6 +2560,54 @@ chronom_cli_upgrade_chronom_command() {
   eksctl utils write-kubeconfig --cluster "$clusterName" --region "$region" --set-kubeconfig-context --authenticator-role-arn "$adminRoleArn"
   kubectl config set-context --current --namespace "$namespace"
 
+  green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
+
+  yellow "# Extracting Chronom Helm registry credentials"
+  registryCredentials=$(kubectl get secret chronom-registry-key -n chronom -o jsonpath='{.data.\.dockerconfigjson}' | base64 --decode)
+
+  registryAddress=$(echo $registryCredentials | jq -r '.auths' | jq -r 'keys[0]')
+  registryUsername=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .username')
+  registryPassword=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .password')
+
+  helm registry login "$registryAddress" --username "$registryUsername" --password "$registryPassword"
+
+  helm get values -n "$namespace" chronom -o yaml > values.yaml
+
+  rabbitPass=$(kubectl get secret --namespace "$namespace" rabbitmq-chronom -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
+
+  rabbitErlangCookie=$(kubectl get secret --namespace "$namespace" rabbitmq-chronom -o jsonpath="{.data.rabbitmq-erlang-cookie}" | base64 -d)
+
+  helm upgrade -n "$namespace" chronom "oci://${registryAddress}/helm/chronom" --version "$version" -f ./values.yaml --set "rabbitmq.auth.password=$rabbitPass" --set "rabbitmq.auth.erlangCookie=$rabbitErlangCookie"
+
+  green "# Done! Chronom has been upgraded to version ${args[--version]} in cluster ${args[--cluster-name]}"
+  green "# Note that it might take a moment for the new version to completly replace the old one"
+
+  rm ./values.yaml
+}
+
+chronom_cli_upgrade_chronom_keda_command() {
+  clusterName=${args[--cluster-name]}
+  region=${args[--region]}
+  version=${args[--version]}
+  namespace=${args[--namespace]}
+
+  if [[ "$version" < "0.1.0" ]]; then
+      red "Version $version is too low, please contact support at support@chronom.ai"
+      exit 1
+  fi
+
+  yellow "# Upgrading Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
+  yellow "# Updating kubeconfig to use the cluster ${args[--cluster-name]} in the region ${args[--region]}"
+
+  adminRoleArn=$(aws iam get-role --role-name "$clusterName-AdminRole" --query 'Role.Arn' --output text)
+  eksctl utils write-kubeconfig --cluster "$clusterName" --region "$region" --set-kubeconfig-context --authenticator-role-arn "$adminRoleArn"
+  kubectl config set-context --current --namespace "$namespace"
+
+  green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
+
+  yellow "# Installing Latest version of Keda"
+  helm repo add kedacore https://kedacore.github.io/charts && helm repo update
+  helm upgrade -i keda kedacore/keda --namespace keda --create-namespace
   green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
 
   yellow "# Extracting Chronom Helm registry credentials"
@@ -4726,6 +4855,13 @@ chronom_cli_upgrade_parse_requirements() {
       shift $#
       ;;
 
+    chronom-keda)
+      action="chronom-keda"
+      shift
+      chronom_cli_upgrade_chronom_keda_parse_requirements "$@"
+      shift $#
+      ;;
+
     "")
       chronom_cli_upgrade_usage >&2
       exit 1
@@ -4915,6 +5051,162 @@ chronom_cli_upgrade_chronom_parse_requirements() {
 
 }
 
+chronom_cli_upgrade_chronom_keda_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_upgrade_chronom_keda_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  if command -v aws >/dev/null 2>&1; then
+    deps['aws']="$(command -v aws | head -n1)"
+  else
+    printf "missing dependency: aws\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+  Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+    exit 1
+  fi
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  if command -v helm >/dev/null 2>&1; then
+    deps['helm']="$(command -v helm | head -n1)"
+  else
+    printf "missing dependency: helm\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
+  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
+    exit 1
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    deps['jq']="$(command -v jq | head -n1)"
+  else
+    printf "missing dependency: jq\n" >&2
+    printf "%s\n" "Please install jq - https://stedolan.github.io/jq/download/" >&2
+    exit 1
+  fi
+
+  action="upgrade chronom-keda"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --version | -v)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--version']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--version requires an argument: --version, -v VERSION" >&2
+          exit 1
+        fi
+        ;;
+
+      --cluster-name | -n)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--cluster-name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--cluster-name requires an argument: --cluster-name, -n CLUSTER-NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --region | -r)
+
+        if [[ -n ${2+x} ]]; then
+
+          if [[ -n $(validate_available_aws_region "$2") ]]; then
+            printf "validation error in %s:\n%s\n" "--region, -r REGION" "$(validate_available_aws_region "$2")" >&2
+            exit 1
+          fi
+
+          args['--region']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--region requires an argument: --region, -r REGION" >&2
+          exit 1
+        fi
+        ;;
+
+      --namespace)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--namespace']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--namespace requires an argument: --namespace NAMESPACE" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['--version']+x} ]]; then
+    printf "missing required flag: --version, -v VERSION\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--cluster-name']+x} ]]; then
+    printf "missing required flag: --cluster-name, -n CLUSTER-NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--region']+x} ]]; then
+    printf "missing required flag: --region, -r REGION\n" >&2
+    exit 1
+  fi
+
+  [[ -n ${args['--namespace']:-} ]] || args['--namespace']="chronom"
+
+}
+
 chronom_cli_completions_parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -4997,6 +5289,7 @@ run() {
     "configure kube-context") chronom_cli_configure_kube_context_command ;;
     "upgrade") chronom_cli_upgrade_command ;;
     "upgrade chronom") chronom_cli_upgrade_chronom_command ;;
+    "upgrade chronom-keda") chronom_cli_upgrade_chronom_keda_command ;;
     "completions") chronom_cli_completions_command ;;
   esac
 }

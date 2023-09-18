@@ -1,3 +1,12 @@
+# # green_bold "# Thank you for choosing Chronom"
+# # green_bold '# Please type "yes" to confirm your concent to Chronom`s Terms of Use and EULA'
+# # read -r tmsEula
+# # echo
+# # if [ "${tmsEula,,}" != "yes" ]; then
+# #     red_bold 'You must agree to Chronom`s Terms of Use and EULA to proceed'
+# #     exit 1
+# # fi
+# # green '# Thank you for agreeing to Chronom`s Terms of Use and EULA'
 yellow "# Creating a new EKS Cluster in the ${args[--region]} region for Chronom"
 yellow "# Cluster Name: ${args[--name]}"
 yellow "# Cluster Version: ${args[--version]}"
@@ -39,6 +48,7 @@ fi
 tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
 
 eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
+
 
 yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
 read -s chronomAuthSecret

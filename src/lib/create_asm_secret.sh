@@ -7,7 +7,7 @@ create_asm_secret() {
     asmRwUserName="$clusterName-aws-credentials-$chronomAuthId-rw-user"
     
     cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
-    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\"}]"
+    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\",\"accountName\":\"Default Account\"}]"
     secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
     
     # Create ReadOnly ASM User
