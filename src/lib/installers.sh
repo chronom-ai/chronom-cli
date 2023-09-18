@@ -123,7 +123,7 @@ install_dig() {
     elif command -v yum >/dev/null 2>&1; then
         yellow "# Detected yum package manager"
         yellow "# Installing dig"
-        sudo yum update
+        sudo yum update -y
         sudo yum install -y bind-utils
         green "# Successfully installed dig"
     else

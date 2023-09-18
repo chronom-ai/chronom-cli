@@ -36,7 +36,7 @@ configure_additional_cluster_eks() {
         permittedAddresses="${chronomPublicIp},${currentIp}/32"
         yellow "# Configuring the cluster to be accessible only from Chronom's IP"
         yellow "# This will take a few minutes, please stand by"
-        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$permittedAddresses" --aprove
+        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$permittedAddresses" --approve
         eksctl utils update-cluster-endpoints --cluster "$clusterName" --region "$region" --public-access=true --private-access=true --approve
         green "# Cluster configured to be accessible only from Chronom's IP"
         yellow "# Checking wether user has access to the cluster"
@@ -89,7 +89,7 @@ EOF
     
     if [[ -n $chronomPublicIp ]]; then
         yellow "# Removing CloudShell Public IP from allowed CIDRs, please stand by"
-        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --aprove
+        eksctl utils set-public-access-cidrs --cluster "$clusterName" --region "$region" "$chronomPublicIp" --approve
         green "# CloudShell Public IP removed from allowed CIDRs"
         green "# Process completed, you can now scan the cluster with Chronom"
     fi
