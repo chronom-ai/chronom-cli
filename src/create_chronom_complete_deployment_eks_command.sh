@@ -24,6 +24,8 @@ chronomAuthId=${args[--chronom-auth-id]}
 chronomVersion=${args[--chronom-version]}
 chronomRegistry=${args[--chronom-registry-name]}
 chronomNamespace=${args[--chronom-namespace]}
+nodeTypeLarge=${args[--node-type-large]}
+maxNodesLarge=${args[--max-nodes-large]}
 
 accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
@@ -86,7 +88,7 @@ green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created 
 
 
 ## Create a fully functional cluster tailored for Chronom
-create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId"
+create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 
 ## Add Chronom user to the cluster
 yellow "# Adding $chronomReadOnlyUsername to the cluster"
