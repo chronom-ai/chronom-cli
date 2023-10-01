@@ -170,6 +170,8 @@ create_cluster_complete(){
     minNodes="$5"
     maxNodes="$6"
     accountId="$7"
+    nodeTypeLarge="$8"
+    maxNodesLarge="$9"
     
     ## Check if cluster name is available
     check_available_cluster_name $clusterName $region
@@ -238,6 +240,9 @@ create_cluster_complete(){
     fi
     
     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
+    ## Remove the . from $nodeTypeLarge using ${variable//search/replace}
+    largeNodeGroupSuffix=${nodeTypeLarge//./}
+    eksctl create nodegroup --cluster "$clusterName" --node-type "$nodeTypeLarge" --nodes-min "3" --nodes-max "$maxNodesLarge" $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region "$region" --alb-ingress-access --name "$clusterName-NodeGroup-$largeNodeGroupSuffix"
     
     eksctl create nodegroup --cluster "$clusterName" --node-type "$nodeType" --nodes-min "$minNodes" --nodes-max "$maxNodes" $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region "$region" --alb-ingress-access --name $clusterName"-NodeGroup"
     green "# EKS NodeGroup created successfully"

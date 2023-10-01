@@ -18,5 +18,5 @@ accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
 eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
-create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $chronomReadOnlyUsername $chronomReadOnlyUserarn $accountId
+create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 

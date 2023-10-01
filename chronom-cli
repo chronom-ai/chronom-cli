@@ -125,14 +125,24 @@ chronom_cli_create_cluster_eks_usage() {
     printf "    Default: t3.small\n"
     echo
 
+    printf "  %s\n" "$(yellow "--node-type-large NODE-TYPE-LARGE")"
+    printf "    The type of node to use\n"
+    printf "    Default: t3.medium\n"
+    echo
+
     printf "  %s\n" "$(yellow "--min-nodes MIN-NODES")"
     printf "    The minimum number of nodes to use\n"
-    printf "    Default: 2\n"
+    printf "    Default: 1\n"
     echo
 
     printf "  %s\n" "$(yellow "--max-nodes MAX-NODES")"
     printf "    The maximum number of nodes to use\n"
-    printf "    Default: 10\n"
+    printf "    Default: 20\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--max-nodes-large MAX-NODES-LARGE")"
+    printf "    The maximum number of nodes to use\n"
+    printf "    Default: 15\n"
     echo
 
     printf "  %s\n" "$(yellow "--version, -v VERSION")"
@@ -256,6 +266,11 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
     printf "    Default: t3.small\n"
     echo
 
+    printf "  %s\n" "$(yellow "--node-type-large NODE-TYPE-LARGE")"
+    printf "    The type of node to use\n"
+    printf "    Default: t3.medium\n"
+    echo
+
     printf "  %s\n" "$(yellow "--chronom-readonly-username CHRONOM-READONLY-USER")"
     printf "    The name of the Chronom Read Only User that will be created.\n    If not provided, will default to the name of the EKS Cluster with '-ro-user'\n    appended.\n"
     echo
@@ -270,12 +285,17 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--min-nodes MIN-NODES")"
     printf "    The minimum number of nodes to use\n"
-    printf "    Default: 4\n"
+    printf "    Default: 1\n"
     echo
 
     printf "  %s\n" "$(yellow "--max-nodes MAX-NODES")"
     printf "    The maximum number of nodes to use\n"
     printf "    Default: 25\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--max-nodes-large MAX-NODES-LARGE")"
+    printf "    The maximum number of nodes to use\n"
+    printf "    Default: 15\n"
     echo
 
     printf "  %s\n" "$(yellow "--skip-gp3-setup")"
@@ -304,7 +324,7 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
 
     printf "  %s\n" "$(yellow "--chronom-version CHRONOM-VERSION")"
     printf "    The Chronom A.I. Version to install.\n    Defaults to the latest version at the time of release.\n"
-    printf "    Default: 0.0.12\n"
+    printf "    Default: 0.1.10\n"
     echo
 
     printf "  %s\n" "$(yellow "--chronom-namespace CHRONOM-NAMESPACE")"
@@ -1574,6 +1594,8 @@ create_cluster_complete(){
     minNodes="$5"
     maxNodes="$6"
     accountId="$7"
+    nodeTypeLarge="$8"
+    maxNodesLarge="$9"
 
     check_available_cluster_name $clusterName $region
 
@@ -1639,6 +1661,8 @@ create_cluster_complete(){
     fi
 
     yellow "# Creating a new EKS NodeGroup in the $region region with $nodeType instance type, minimum nodes: $minNodes, maximum nodes: $maxNodes"
+    largeNodeGroupSuffix=${nodeTypeLarge//./}
+    eksctl create nodegroup --cluster "$clusterName" --node-type "$nodeTypeLarge" --nodes-min "3" --nodes-max "$maxNodesLarge" $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region "$region" --alb-ingress-access --name "$clusterName-NodeGroup-$largeNodeGroupSuffix"
 
     eksctl create nodegroup --cluster "$clusterName" --node-type "$nodeType" --nodes-min "$minNodes" --nodes-max "$maxNodes" $sshKeysFlags --managed --max-pods-per-node 110 --asg-access --tags "$eksctlTags" --node-private-networking --external-dns-access --region "$region" --alb-ingress-access --name $clusterName"-NodeGroup"
     green "# EKS NodeGroup created successfully"
@@ -1933,7 +1957,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'create chronom complete-deployment-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c chronom complete-deployment-eks\'*\'-n\')'
@@ -1949,7 +1973,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'c chronom complete-deployment-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'configure kube-context\'*\'--region\')'
@@ -2077,7 +2101,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'create cluster-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--create-rsa-key --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --setup-calico-cni --skip-gp3-setup --version -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--create-rsa-key --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-gp3-setup --version -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c chronom user-iam\'*)'
@@ -2169,7 +2193,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'c cluster-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--create-rsa-key --help --key-pair-name --max-nodes --min-nodes --name --node-type --region --setup-calico-cni --skip-gp3-setup --version -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--create-rsa-key --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-gp3-setup --version -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'l cluster-eks\'*)'
@@ -2330,7 +2354,7 @@ chronom_cli_create_cluster_eks_command() {
   tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
   eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
-  create_cluster_complete $clusterName $region $version $nodeType $minNodes $maxNodes $chronomReadOnlyUsername $chronomReadOnlyUserarn $accountId
+  create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 
 }
 
@@ -2370,6 +2394,8 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   chronomVersion=${args[--chronom-version]}
   chronomRegistry=${args[--chronom-registry-name]}
   chronomNamespace=${args[--chronom-namespace]}
+  nodeTypeLarge=${args[--node-type-large]}
+  maxNodesLarge=${args[--max-nodes-large]}
 
   accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
@@ -2425,7 +2451,7 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   create_asm_secret "$clusterName" "$region" "$tags"
   green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
 
-  create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId"
+  create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 
   yellow "# Adding $chronomReadOnlyUsername to the cluster"
   chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
@@ -3106,6 +3132,19 @@ chronom_cli_create_cluster_eks_parse_requirements() {
         fi
         ;;
 
+      --node-type-large)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--node-type-large']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--node-type-large requires an argument: --node-type-large NODE-TYPE-LARGE" >&2
+          exit 1
+        fi
+        ;;
+
       --min-nodes)
 
         if [[ -n ${2+x} ]]; then
@@ -3128,6 +3167,19 @@ chronom_cli_create_cluster_eks_parse_requirements() {
           shift
         else
           printf "%s\n" "--max-nodes requires an argument: --max-nodes MAX-NODES" >&2
+          exit 1
+        fi
+        ;;
+
+      --max-nodes-large)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--max-nodes-large']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--max-nodes-large requires an argument: --max-nodes-large MAX-NODES-LARGE" >&2
           exit 1
         fi
         ;;
@@ -3182,8 +3234,10 @@ chronom_cli_create_cluster_eks_parse_requirements() {
   fi
 
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
-  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="2"
-  [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="10"
+  [[ -n ${args['--node-type-large']:-} ]] || args['--node-type-large']="t3.medium"
+  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="1"
+  [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="20"
+  [[ -n ${args['--max-nodes-large']:-} ]] || args['--max-nodes-large']="15"
   [[ -n ${args['--version']:-} ]] || args['--version']="1.27"
 
 }
@@ -3413,6 +3467,19 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
         fi
         ;;
 
+      --node-type-large)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--node-type-large']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--node-type-large requires an argument: --node-type-large NODE-TYPE-LARGE" >&2
+          exit 1
+        fi
+        ;;
+
       --chronom-readonly-username)
 
         if [[ -n ${2+x} ]]; then
@@ -3482,6 +3549,19 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
           shift
         else
           printf "%s\n" "--max-nodes requires an argument: --max-nodes MAX-NODES" >&2
+          exit 1
+        fi
+        ;;
+
+      --max-nodes-large)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--max-nodes-large']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--max-nodes-large requires an argument: --max-nodes-large MAX-NODES-LARGE" >&2
           exit 1
         fi
         ;;
@@ -3638,9 +3718,11 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
 
   [[ -n ${args['--version']:-} ]] || args['--version']="1.27"
   [[ -n ${args['--node-type']:-} ]] || args['--node-type']="t3.small"
-  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="4"
+  [[ -n ${args['--node-type-large']:-} ]] || args['--node-type-large']="t3.medium"
+  [[ -n ${args['--min-nodes']:-} ]] || args['--min-nodes']="1"
   [[ -n ${args['--max-nodes']:-} ]] || args['--max-nodes']="25"
-  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.0.12"
+  [[ -n ${args['--max-nodes-large']:-} ]] || args['--max-nodes-large']="15"
+  [[ -n ${args['--chronom-version']:-} ]] || args['--chronom-version']="0.1.10"
   [[ -n ${args['--chronom-namespace']:-} ]] || args['--chronom-namespace']="chronom"
   [[ -n ${args['--chronom-registry-name']:-} ]] || args['--chronom-registry-name']="chronomprodacr.azurecr.io"
 
