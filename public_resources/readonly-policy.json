@@ -101,6 +101,7 @@
                 "glacier:Get*",
                 "cloudtrail:Get*",
                 "cloudtrail:List*",
+                "cloudtrail:LookupEvents",
                 "cloudtrail:Describe*",
                 "cloudwatch:Get*",
                 "cloudwatch:Describe*",
