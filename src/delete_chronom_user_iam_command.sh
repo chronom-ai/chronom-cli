@@ -78,12 +78,9 @@ if [[ -n "$possibleUsers" ]]; then
       aws iam delete-policy --policy-arn "arn:aws:iam::$accountId:policy/$userName-policy" || red "User Policy not found"
     done
   else
-    echo "No users will be deleted"
+    blue "No users will be deleted"
   fi
 else
-  echo "No users found with '-aws-credentials-' in their username"
+  blue "No users found with '-aws-credentials-' in their username"
 fi
-
-
-
 green "# Successfull deleted user $userName and role $roleName"

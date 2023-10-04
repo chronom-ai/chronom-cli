@@ -85,8 +85,6 @@ yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-user
 create_asm_secret "$clusterName" "$region" "$tags"
 green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
 
-
-
 ## Create a fully functional cluster tailored for Chronom
 create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 

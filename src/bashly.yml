@@ -249,7 +249,7 @@ commands:
 
       - long: --chronom-version
         arg: chronom-version
-        default: 0.1.10
+        default: 0.1.13
         help: |-
           The Chronom A.I. Version to install.
           Defaults to the latest version at the time of release.
@@ -615,8 +615,6 @@ commands:
   #     help: Namespace where chronom is installed - usually chronom
 
 - name: completions
-
-
   help: |-
     Generate bash completions
     Usage: eval "\$(./chronom-cli completions)"

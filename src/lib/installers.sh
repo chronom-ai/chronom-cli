@@ -64,15 +64,16 @@ install_helm() {
     yellow "# Checking helm version"
     if command -v helm >/dev/null 2>&1; then
         helm_version=$(helm version --template='{{.Version}}' | cut -c2-)
-        required_version="3.10.0"
+        required_version="3.12.3"
         
-        if [[ "$(printf '%s\n' "$required_version" "$helm_version" | sort -V | tail -n 1)" == "$helm_version" ]]; then
+        # if [[ "$(printf '%s\n' "$required_version" "$helm_version" | sort -V | tail -n 1)" == "$helm_version" ]]; then
+        if [[ "$helm_version" != "$required_version" ]]; then
             green "# helm is installed and version is greater than or equal to $required_version"
         else
             blue "# helm version is less than $required_version, Installing newer version"
             curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
             chmod 700 get_helm.sh
-            ./get_helm.sh
+            ./get_helm.sh --version v3.12.3
             green "# Successfully installed helm locally"
             rm get_helm.sh
         fi
@@ -80,7 +81,7 @@ install_helm() {
         red "# helm is not installed, installing now"
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
         chmod 700 get_helm.sh
-        ./get_helm.sh
+        ./get_helm.sh --version v3.12.3
         green "# Successfully installed helm locally"
         rm get_helm.sh
     fi
