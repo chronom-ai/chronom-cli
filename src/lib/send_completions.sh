@@ -55,7 +55,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'configure chronom additional-cluster-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--chronom-public-ip --chronom-readonly-roleArn --cluster-name --help --region -h")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--chronom-readonly-roleArn --cluster-name --help --region -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create chronom complete-deployment-eks\'*)'

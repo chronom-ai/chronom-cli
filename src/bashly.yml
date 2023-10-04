@@ -447,13 +447,6 @@ commands:
           This value is shown in the property "clusterCommand" in the EKS object in chronom.
         required: true
         repeatable: false
-      - long: --chronom-public-ip
-        arg: chronom-public-ip
-        help: |-
-          The Public Ip address of chronom.
-          If not provided in the EKS Cluster clusterCommand object, please find it by going to the EKS Cluster in your AWS Console.
-        required: false
-        repeatable: false
   - name: kube-context
     alias: k
     help: Configure the current Kubernetes context to use Chronom A.I.
