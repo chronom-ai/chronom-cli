@@ -4,7 +4,8 @@ yellow "# Configuring Local Kubectl Context to use the Cluster ${args[--name]} i
 clusterName=${args[--name]}
 region=${args[--region]}
 
-if [ -z "${args[--use-admin-role]}" ]; then
+if [[ -n "${args[--use-admin-role]}" ]]; then
+    # When there is a use-admin-role flag, we use the Admin role to authenticate
     yellow "# Using the Admin role $clusterName-AdminRole"
     adminRoleArn=$(aws iam get-role --role-name $clusterName-AdminRole --query 'Role.Arn' --output text)
     yellow "# Updating kubeconfig"

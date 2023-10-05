@@ -16,17 +16,27 @@ configure_additional_cluster_eks() {
     green "# Temporary Credentials generated successfully"
     
     
+    
+    ## @TODO - Add check if cluster is private, then if fails display it as a warning as well
+    
     yellow "# Checking wether user has access to the cluster"
     canI=$(kubectl --server $endpoint --token $token --certificate-authority $pemFile auth can-i '*' '*' --all-namespaces || echo "no")
     if [ "$canI" == "no" ]; then
-        red "# User does not have access to the cluster"
-        red "# Please execute the command with a user that has access to the cluster"
+        red "# Unfortunately chronom-cli failed to reach the cluster"
+        red "# The most common reason for this is either the user does not have access to the cluster or the cluster is private (or both)"
+        endpointIp=$(dig +short "$(echo $endpoint | sed 's/https:\/\///g')" | head -n1)
+        if [[ $endpointIp =~ ^10\. || $endpointIp =~ ^172\.1[6-9]\. || $endpointIp =~ ^172\.2[0-9]\. || $endpointIp =~ ^172\.3[0-1]\. || $endpointIp =~ ^192\.168\. ]]; then
+            red "# The cluster is private, please make sure you are connected to the cluster's VPC - This might not be the issue, but it's worth checking :)"
+        fi
+        red "# Please make sure you execute the command with a user that has access to the cluster"
         cloudTrail=$(aws cloudtrail lookup-events --region "$region" --lookup-attributes "AttributeKey=ResourceName,AttributeValue=$clusterName" --output json)
         possibleUsers=$(echo "$cloudTrail" | jq -r '.Events[].Username' | sort | uniq)
         if [[ -n $possibleUsers ]]; then
             red "# According to CloudTrail, the following users might have access to the cluster:"
             echo "$possibleUsers"
         fi
+        red "# If you are sure you have access to the cluster, please contact Chronom Support and we will be happy to assist you"
+        red "# You can contact us via email at support@chronom.ai"
         exit 1
     fi
     green "# User has access to the cluster, proceeding with the configuration"

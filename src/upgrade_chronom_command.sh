@@ -7,6 +7,10 @@ region=${args[--region]}
 version=${args[--version]}
 namespace=${args[--namespace]}
 
+
+##@TODO: Add check if user is root
+
+
 adminRoleArn=$(aws iam get-role --role-name "$clusterName-AdminRole" --query 'Role.Arn' --output text)
 eksctl utils write-kubeconfig --cluster "$clusterName" --region "$region" --set-kubeconfig-context --authenticator-role-arn "$adminRoleArn"
 kubectl config set-context --current --namespace "$namespace"
@@ -14,7 +18,7 @@ kubectl config set-context --current --namespace "$namespace"
 green "# Done! Proceeding to upgrade Chronom to version ${args[--version]} in cluster ${args[--cluster-name]}"
 
 yellow "# Extracting Chronom Helm registry credentials"
-registryCredentials=$(kubectl get secret chronom-registry-key -n chronom -o jsonpath='{.data.\.dockerconfigjson}' | base64 --decode)
+registryCredentials=$(kubectl get secret chronom-registry-key -n "$namespace" -o jsonpath='{.data.\.dockerconfigjson}' | base64 --decode)
 
 registryAddress=$(echo $registryCredentials | jq -r '.auths' | jq -r 'keys[0]')
 registryUsername=$(echo $registryCredentials | jq -r '.auths' | jq -r '.[] | .username')
