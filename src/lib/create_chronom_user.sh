@@ -9,7 +9,7 @@ create_chronom_user() {
     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
     aws iam create-user --user-name "$userName" --tags "$tags" --query 'User.Arn' --output text
     roleArn=$(aws iam create-role --role-name "$roleName" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}" --query 'Role.Arn' --output text)
-    assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]},{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:*:*:cluster/*\"]}]}" --query 'Policy.Arn' --output text)
+    assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]}]}" --query 'Policy.Arn' --output text)
     aws iam attach-user-policy --user-name "$userName" --policy-arn "$assumePolicyArn"
     curl -Os https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/readonly-policy.json
     roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "$roleName-permissions-policy" --policy-document file://readonly-policy.json  --query 'Policy.Arn' --output text)
