@@ -277,6 +277,60 @@ commands:
         conflicts:
         - "--auto-validate"
 
+      - long: --ro-role-arn
+        arg: ro-role-arn
+        required: false
+        help: |-
+          The ARN of the Chronom Read Only Role.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --ro-user-access-key
+        arg: ro-user-access-key
+        required: false
+        help: |-
+          The Access Key of the Chronom Read Only User.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --ro-user-secret-key
+        arg: ro-user-secret-key
+        required: false
+        help: |-
+          The Secret Key of the Chronom Read Only User.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --asm-ro-user-access-key
+        arg: asm-ro-user-access-key
+        required: false
+        help: |-
+          The Access Key of the ASM Read Only User.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --asm-ro-user-secret-key
+        arg: asm-ro-user-secret-key
+        required: false
+        help: |-
+          The Secret Key of the ASM Read Only User.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --asm-rw-user-access-key
+        arg: asm-rw-user-access-key
+        required: false
+        help: |-
+          The Access Key of the ASM Read Write User.
+          This value is only in case you want to use an existing IAM role and Users
+
+      - long: --asm-rw-user-secret-key
+        arg: asm-rw-user-secret-key
+        required: false
+        help: |-
+          The Secret Key of the ASM Read Write User.
+          This value is only in case you want to use an existing IAM role and Users
+
+
+
+
+
+
       examples:
       - chronom-cli create chronom complete-deployment-eks --name chronom-cluster --region eu-north-1 --dns-record <chronom-cluster.chronom.ai> --auto-validate --chronom-registry-username <chronom-registry-username> --chronom-auth-id <chronom-auth-id> --create-rsa-key
 

@@ -345,6 +345,34 @@ chronom_cli_create_chronom_complete_deployment_eks_usage() {
     printf "    Not Recommended - Skip the Certificate setup\n"
     echo
 
+    printf "  %s\n" "$(yellow "--ro-role-arn RO-ROLE-ARN")"
+    printf "    The ARN of the Chronom Read Only Role.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--ro-user-access-key RO-USER-ACCESS-KEY")"
+    printf "    The Access Key of the Chronom Read Only User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--ro-user-secret-key RO-USER-SECRET-KEY")"
+    printf "    The Secret Key of the Chronom Read Only User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--asm-ro-user-access-key ASM-RO-USER-ACCESS-KEY")"
+    printf "    The Access Key of the ASM Read Only User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--asm-ro-user-secret-key ASM-RO-USER-SECRET-KEY")"
+    printf "    The Secret Key of the ASM Read Only User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--asm-rw-user-access-key ASM-RW-USER-ACCESS-KEY")"
+    printf "    The Access Key of the ASM Read Write User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--asm-rw-user-secret-key ASM-RW-USER-SECRET-KEY")"
+    printf "    The Secret Key of the ASM Read Write User.\n    This value is only in case you want to use an existing IAM role and Users\n"
+    echo
+
     printf "  %s\n" "$(yellow "--help, -h")"
     printf "    Show this help\n"
     echo
@@ -1324,7 +1352,7 @@ create_chronom_user() {
     accountId=$(aws sts get-caller-identity --query 'Account' --output text)
     aws iam create-user --user-name "$userName" --tags "$tags" --query 'User.Arn' --output text
     roleArn=$(aws iam create-role --role-name "$roleName" --tags "$tags" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"AWS\":\"$accountId\"},\"Condition\":{}}]}" --query 'Role.Arn' --output text)
-    assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]},{\"Sid\":\"AllowEKSAccess\",\"Effect\":\"Allow\",\"Action\":[\"eks:AccessKubernetesApi\"],\"Resource\":[\"arn:aws:eks:*:*:cluster/*\"]}]}" --query 'Policy.Arn' --output text)
+    assumePolicyArn=$(aws iam create-policy --policy-name "$userName-permissions-policy" --tags "$tags" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"AssumeRole\",\"Effect\":\"Allow\",\"Action\":[\"sts:AssumeRole\"],\"Resource\":[\"$roleArn\"]}]}" --query 'Policy.Arn' --output text)
     aws iam attach-user-policy --user-name "$userName" --policy-arn "$assumePolicyArn"
     curl -Os https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/readonly-policy.json
     roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "$roleName-permissions-policy" --policy-document file://readonly-policy.json  --query 'Policy.Arn' --output text)
@@ -1875,7 +1903,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'create chronom complete-deployment-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--asm-ro-user-access-key --asm-ro-user-secret-key --asm-rw-user-access-key --asm-rw-user-secret-key --auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --ro-role-arn --ro-user-access-key --ro-user-secret-key --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c chronom complete-deployment-eks\'*\'-n\')'
@@ -1887,7 +1915,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'c chronom complete-deployment-eks\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--asm-ro-user-access-key --asm-ro-user-secret-key --asm-rw-user-access-key --asm-rw-user-secret-key --auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --ro-role-arn --ro-user-access-key --ro-user-secret-key --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'configure kube-context\'*\'--region\')'
@@ -2296,6 +2324,16 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   nodeTypeLarge=${args[--node-type-large]}
   maxNodesLarge=${args[--max-nodes-large]}
 
+  # If getting any of the following parameters, make sure that all of them are provided
+  # parameters:
+  #${args[--ro-role-arn]}
+  #${args[--ro-user-access-key]}
+  #${args[--ro-user-secret-key]}
+  #${args[--asm-ro-user-access-key]}
+  #${args[--asm-ro-user-secret-key]}
+  #${args[--asm-rw-user-access-key]}
+  #${args[--asm-rw-user-secret-key]}
+
   accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
   if [ ${args[--chronom-readonly-username]} ]; then
@@ -2342,19 +2380,36 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
       read -s chronomRegistryPassword
   done
 
-  yellow "# Creating Chronom user"
-  create_chronom_user "$chronomReadOnlyUsername" true
-  green "# Chronom user created successfully"
+  if [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
+      yellow "# Creating Chronom user"
+      create_chronom_user "$chronomReadOnlyUsername" true
+      green "# Chronom user created successfully"
+  else
+      roleArn=${args[--ro-role-arn]}
+      accessKey='{"accessKeyId": "'${args[--ro-user-access-key]}'", "secretAccessKey": "'${args[--ro-user-secret-key]}'"}'
+  fi
 
-  yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
-  create_asm_secret "$clusterName" "$region" "$tags"
-  green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+  if [ -z ${args[--asm-ro-user-access-key]} ] && [ -z ${args[--asm-ro-user-secret-key]} ] && [ -z ${args[--asm-rw-user-access-key]} ] && [ -z ${args[--asm-rw-user-secret-key]} ]; then
+      yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+      create_asm_secret "$clusterName" "$region" "$tags"
+      green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+  else
+      yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+      roAccessKey='{"accessKeyId": "'${args[--asm-ro-user-access-key]}'", "secretAccessKey": "'${args[--asm-ro-user-secret-key]}'"}'
+      rwAccessKey='{"accessKeyId": "'${args[--asm-rw-user-access-key]}'", "secretAccessKey": "'${args[--asm-rw-user-secret-key]}'"}'
+      cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
+      initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\",\"accountName\":\"Default Account\"}]"
+      secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
+      green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+  fi
 
   create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 
-  yellow "# Adding $chronomReadOnlyUsername to the cluster"
-  chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
-  green "# $chronomReadOnlyUsername added to the cluster successfully"
+  if [ -z ${args[--asm-ro-user-access-key]} ] && [ -z ${args[--asm-ro-user-secret-key]} ] && [ -z ${args[--asm-rw-user-access-key]} ] && [ -z ${args[--asm-rw-user-secret-key]} ] && [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
+      yellow "# Adding $chronomReadOnlyUsername to the cluster"
+      chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
+      green "# $chronomReadOnlyUsername added to the cluster successfully"
+  fi
 
   if [ ! ${args[--skip-certificate-setup]} ]; then
       create_certificate_request $dnsRecord $region
@@ -3585,6 +3640,97 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
 
         args['--skip-certificate-setup']=1
         shift
+        ;;
+
+      --ro-role-arn)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--ro-role-arn']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ro-role-arn requires an argument: --ro-role-arn RO-ROLE-ARN" >&2
+          exit 1
+        fi
+        ;;
+
+      --ro-user-access-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--ro-user-access-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ro-user-access-key requires an argument: --ro-user-access-key RO-USER-ACCESS-KEY" >&2
+          exit 1
+        fi
+        ;;
+
+      --ro-user-secret-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--ro-user-secret-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ro-user-secret-key requires an argument: --ro-user-secret-key RO-USER-SECRET-KEY" >&2
+          exit 1
+        fi
+        ;;
+
+      --asm-ro-user-access-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--asm-ro-user-access-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--asm-ro-user-access-key requires an argument: --asm-ro-user-access-key ASM-RO-USER-ACCESS-KEY" >&2
+          exit 1
+        fi
+        ;;
+
+      --asm-ro-user-secret-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--asm-ro-user-secret-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--asm-ro-user-secret-key requires an argument: --asm-ro-user-secret-key ASM-RO-USER-SECRET-KEY" >&2
+          exit 1
+        fi
+        ;;
+
+      --asm-rw-user-access-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--asm-rw-user-access-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--asm-rw-user-access-key requires an argument: --asm-rw-user-access-key ASM-RW-USER-ACCESS-KEY" >&2
+          exit 1
+        fi
+        ;;
+
+      --asm-rw-user-secret-key)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--asm-rw-user-secret-key']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--asm-rw-user-secret-key requires an argument: --asm-rw-user-secret-key ASM-RW-USER-SECRET-KEY" >&2
+          exit 1
+        fi
         ;;
 
       -?*)

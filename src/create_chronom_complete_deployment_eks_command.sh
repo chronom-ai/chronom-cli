@@ -27,6 +27,16 @@ chronomNamespace=${args[--chronom-namespace]}
 nodeTypeLarge=${args[--node-type-large]}
 maxNodesLarge=${args[--max-nodes-large]}
 
+# If getting any of the following parameters, make sure that all of them are provided
+# parameters:
+#${args[--ro-role-arn]}
+#${args[--ro-user-access-key]}
+#${args[--ro-user-secret-key]}
+#${args[--asm-ro-user-access-key]}
+#${args[--asm-ro-user-secret-key]}
+#${args[--asm-rw-user-access-key]}
+#${args[--asm-rw-user-secret-key]}
+
 accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
 if [ ${args[--chronom-readonly-username]} ]; then
@@ -46,6 +56,7 @@ if [ ${args[--chronom-registry-username]} ]; then
 else
     chronomRegistryUsername=org-$chronomAuthId
 fi
+
 
 tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
 
@@ -74,25 +85,43 @@ do
     read -s chronomRegistryPassword
 done
 
+if [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
+    ## Create Chronom user
+    yellow "# Creating Chronom user"
+    create_chronom_user "$chronomReadOnlyUsername" true
+    green "# Chronom user created successfully"
+else
+    roleArn=${args[--ro-role-arn]}
+    accessKey='{"accessKeyId": "'${args[--ro-user-access-key]}'", "secretAccessKey": "'${args[--ro-user-secret-key]}'"}'
+fi
 
-## Create Chronom user
-yellow "# Creating Chronom user"
-create_chronom_user "$chronomReadOnlyUsername" true
-green "# Chronom user created successfully"
 
-## Create a new AWS Secret Manager Secrect to Store the AWS Credentials for the Chronom readonly users
-yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
-create_asm_secret "$clusterName" "$region" "$tags"
-green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+if [ -z ${args[--asm-ro-user-access-key]} ] && [ -z ${args[--asm-ro-user-secret-key]} ] && [ -z ${args[--asm-rw-user-access-key]} ] && [ -z ${args[--asm-rw-user-secret-key]} ]; then
+    ## Create a new AWS Secret Manager Secrect to Store the AWS Credentials for the Chronom readonly users
+    yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+    create_asm_secret "$clusterName" "$region" "$tags"
+    green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+else
+    yellow "# Creating AWS Secret Manager Secrect $clusterName-chronom-readonly-users"
+    roAccessKey='{"accessKeyId": "'${args[--asm-ro-user-access-key]}'", "secretAccessKey": "'${args[--asm-ro-user-secret-key]}'"}'
+    rwAccessKey='{"accessKeyId": "'${args[--asm-rw-user-access-key]}'", "secretAccessKey": "'${args[--asm-rw-user-secret-key]}'"}'
+    cleanAccessKey=$(echo $accessKey | awk '{gsub(/{|}/,"")}1')
+    initialSecret="[{\"organizationId\":\"$chronomAuthId\",$cleanAccessKey,\"roleArn\":\"$roleArn\",\"accountId\":\"$accountId\",\"accountName\":\"Default Account\"}]"
+    secretManagerArn=$(aws secretsmanager create-secret --name "aws-credentials-$chronomAuthId" --secret-string "$initialSecret" --region "$region" --tags "$tags" --query 'ARN' --output text)
+    green "# AWS Secret Manager Secrect $clusterName-chronom-readonly-users created successfully"
+fi
+
 
 ## Create a fully functional cluster tailored for Chronom
 create_cluster_complete "$clusterName" "$region" "$version" "$nodeType" "$minNodes" "$maxNodes" "$accountId" "$nodeTypeLarge" "$maxNodesLarge"
 
-## Add Chronom user to the cluster
-yellow "# Adding $chronomReadOnlyUsername to the cluster"
-chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
-green "# $chronomReadOnlyUsername added to the cluster successfully"
 
+if [ -z ${args[--asm-ro-user-access-key]} ] && [ -z ${args[--asm-ro-user-secret-key]} ] && [ -z ${args[--asm-rw-user-access-key]} ] && [ -z ${args[--asm-rw-user-secret-key]} ] && [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
+    ## Add Chronom user to the cluster
+    yellow "# Adding $chronomReadOnlyUsername to the cluster"
+    chronomReadonlyClusterRole $clusterName $region $chronomReadOnlyUsername
+    green "# $chronomReadOnlyUsername added to the cluster successfully"
+fi
 
 if [ ! ${args[--skip-certificate-setup]} ]; then
     ## Create a new certificate request for the chronom Deployment that will be created later
