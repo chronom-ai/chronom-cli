@@ -62,18 +62,7 @@ tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":
 
 eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
-
-yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
-read -s chronomAuthSecret
-while [ ${#chronomAuthSecret} -lt 127 ]
-do
-    echo
-    red "Chronom Auth Secret must be 128 characters long"
-    red "Please enter the Chronom Auth Secret that was provided to you: "
-    read -s chronomAuthSecret
-done
-
-echo
+# validate_chronom_auth $chronomAuthId
 
 yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
 read -s chronomRegistryPassword
