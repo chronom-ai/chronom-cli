@@ -2658,16 +2658,6 @@ send_completions() {
   echo $'# ex: filetype=sh'
 }
 
-# Write curl to https://auth.chronom.ai/
-
-validate_chronom_auth() {
-
-    statusCode=$(curl --write-out %{http_code} --silent --output /dev/null -X POST "https://auth.chronom.ai/organization/authenticate" -H "Content-Type: application/json" -d "{\"clientId\": \"$chronomAuthId\", \"clientSecret\": \"$chronomAuthSecret\"}")
-
-    echo $statusCode
-
-}
-
 validate_available_dns_record() {
 
     [[ $(echo "$1" | grep -o "\." | wc -l) -ge 2 ]] || echo "Please enter a valid DNS Record."
@@ -2728,6 +2718,67 @@ validate_integer() {
 
 validate_not_empty() {
   [[ -z "$1" ]] && echo "must not be empty"
+}
+
+validate_chronom_auth() {
+
+    statusCode=$(curl --write-out %{http_code} --silent --output /dev/null -X POST "https://auth.chronom.ai/organization/authenticate" -H "Content-Type: application/json" -d "{\"clientId\": \"$chronomAuthId\", \"clientSecret\": \"$chronomAuthSecret\"}")
+
+    echo $statusCode
+
+}
+
+validate_aws_permissions() {
+
+    callerArn=$(aws sts get-caller-identity --query 'Arn' --output text)
+
+    iamPermissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "iam:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+    eksPermissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "eks:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+    ec2Permissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "ec2:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+    route53Permissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "route53:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+    acmPermissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "acm:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+    secretsManagerPermissions=$(aws iam simulate-principal-policy --policy-source-arn $callerArn --action-names "secretsmanager:*" --query 'EvaluationResults[0].EvalDecision' --output text)
+
+
+    if [ "$eksPermissions" -ne 'allowed' ] && [ "$ec2Permissions" -ne 'allowed' ] && [ "$route53Permissions" -ne 'allowed' ] && [ "$acmPermissions" -ne 'allowed' ] && [ "$secretsManagerPermissions" -ne 'allowed' ]; then
+
+        red_bold "Error: The Identity executing the command does not have the required permissions!"
+
+        red_bold "Please make sure that the AWS Identity executing the command has the following permissions:"
+
+        red_bold "EKS: eks:*"
+
+        red_bold "EC2: ec2:*"
+
+        red_bold "Route53: route53:*"
+
+        red_bold "ACM: acm:*"
+
+        red_bold "SecretsManager: secretsmanager:*"
+
+        exit 1
+
+    fi
+
+    if [ -z "${args[--ro-user-access-key]}" ] && [ "$iamPermissions" -ne 'allowed' ]; then
+
+        red_bold "Error: The Identity executing the command does not have the required permissions!"
+
+        red_bold "Please make sure that the AWS Identity executing the command has the following permissions:"
+
+        red_bold "IAM: iam:*"
+
+        red_bold "Alternatively, you can manually create the users and provide the access keys using the --ro-user-access-key and --ro-user-secret-key flags"
+
+        exit 1
+
+    fi
+
 }
 
 chronom_cli_create_cluster_eks_command() {
@@ -2830,6 +2881,21 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
   nodeTypeLarge=${args[--node-type-large]}
 
   maxNodesLarge=${args[--max-nodes-large]}
+
+  tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+
+  eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
+
+
+  if [ ${args[--skip-ingress-setup]} ]; then
+
+      ingressEnabled=false
+
+  else
+
+      ingressEnabled=true
+
+  fi
 
   if [[ -n ${args[--chronom-encoded-credentials]} ]]; then
 
@@ -2989,31 +3055,8 @@ chronom_cli_create_chronom_complete_deployment_eks_command() {
 
   fi
 
-  if [ ${args[--skip-ingress-setup]} ]; then
 
-      ingressEnabled=false
-
-  else
-
-      ingressEnabled=true
-
-  fi
-
-  if [ ${args[--chronom-registry-username]} ]; then
-
-      chronomRegistryUsername=${args[--chronom-registry-username]}
-
-  else
-
-      chronomRegistryUsername=org-$chronomAuthId
-
-  fi
-
-  tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
-
-  eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
-
-  # validate_chronom_auth $chronomAuthId
+  validate_aws_permissions
 
   if [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
 

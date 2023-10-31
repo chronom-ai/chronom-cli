@@ -25,7 +25,15 @@ chronomRegistry=${args[--chronom-registry-name]}
 chronomNamespace=${args[--chronom-namespace]}
 nodeTypeLarge=${args[--node-type-large]}
 maxNodesLarge=${args[--max-nodes-large]}
+tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
+## Check wether ingress is enabled
+if [ ${args[--skip-ingress-setup]} ]; then
+    ingressEnabled=false
+else
+    ingressEnabled=true
+fi
 
 
 if [[ -n ${args[--chronom-encoded-credentials]} ]]; then
@@ -100,6 +108,7 @@ do
     validate_chronom_auth
 done
 green "Credentials validated successfuly"
+
 if [[ -n ${args[--chronom-registry-username]} ]]; then
     chronomRegistryUsername=${args[--chronom-registry-username]}
 else
@@ -114,24 +123,8 @@ else
     chronomReadOnlyUsername=$clusterName-ro-user
 fi
 
-if [ ${args[--skip-ingress-setup]} ]; then
-    ingressEnabled=false
-else
-    ingressEnabled=true
-fi
-
-if [ ${args[--chronom-registry-username]} ]; then
-    chronomRegistryUsername=${args[--chronom-registry-username]}
-else
-    chronomRegistryUsername=org-$chronomAuthId
-fi
-
-
-tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
-
-eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
-
-# validate_chronom_auth $chronomAuthId
+## Validate that the current User/Role has the required permissions to create the cluster
+validate_aws_permissions
 
 if [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
     ## Create Chronom user
