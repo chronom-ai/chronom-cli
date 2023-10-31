@@ -20,22 +20,91 @@ nodeType=${args[--node-type]}
 minNodes=${args[--min-nodes]}
 maxNodes=${args[--max-nodes]}
 dnsRecord=${args[--dns-record]}
-chronomAuthId=${args[--chronom-auth-id]}
 chronomVersion=${args[--chronom-version]}
 chronomRegistry=${args[--chronom-registry-name]}
 chronomNamespace=${args[--chronom-namespace]}
 nodeTypeLarge=${args[--node-type-large]}
 maxNodesLarge=${args[--max-nodes-large]}
 
-# If getting any of the following parameters, make sure that all of them are provided
-# parameters:
-#${args[--ro-role-arn]}
-#${args[--ro-user-access-key]}
-#${args[--ro-user-secret-key]}
-#${args[--asm-ro-user-access-key]}
-#${args[--asm-ro-user-secret-key]}
-#${args[--asm-rw-user-access-key]}
-#${args[--asm-rw-user-secret-key]}
+
+
+if [[ -n ${args[--chronom-encoded-credentials]} ]]; then
+    ## If the credentials are provided in the encoded format, decode them and assign the individual values to variables
+    decodedJson=$(echo ${args[--chronom-encoded-credentials]} | base64 --decode 2>/dev/null) || (red_bold "Decoding error, please verify information and run again" && red_bold "If you are still having trouble please insert the parameters individually" && exit 1)
+    chronomAuthId=$(echo $decodedJson | jq -r '.orgId')
+    chronomAuthSecret=$(echo $decodedJson | jq -r '.orgSecret')
+    chronomRegistryPassword=$(echo $decodedJson | jq -r '.registryPassword')
+    elif [[ -n ${args[--chronom-auth-id]} ]]; then
+    ## If the credentials are not provided, ask the user to enter them
+    chronomAuthId=${args[--chronom-auth-id]}
+    yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
+    read -s chronomAuthSecret
+    while [ ${#chronomAuthSecret} -lt 127 ]
+    do
+        echo
+        red "Chronom Auth Secret must be 128 characters long"
+        red "Please enter the Chronom Auth Secret that was provided to you: "
+        read -s chronomAuthSecret
+    done
+    echo
+    yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
+    read -s chronomRegistryPassword
+    while [ ${#chronomRegistryPassword} -lt 51 ]
+    do
+        echo
+        red "Chronom Registry Password must be 52 characters long"
+        red "Please enter the Chronom Registry Password that was provided to you: "
+        read -s chronomRegistryPassword
+    done
+else
+    ## If neighter the encoded string or the auth-id were provided, request each of them manually
+    yellow_bold "Please enter the Chronom Auth ID that was provided to you: "
+    read -s chronomAuthId
+    echo
+    yellow_bold "Please enter the Chronom Auth Secret that was provided to you: "
+    read -s chronomAuthSecret
+    while [ ${#chronomAuthSecret} -lt 127 ]
+    do
+        echo
+        red "Chronom Auth Secret must be 128 characters long"
+        red "Please enter the Chronom Auth Secret that was provided to you: "
+        read -s chronomAuthSecret
+    done
+    echo
+    yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
+    read -s chronomRegistryPassword
+    while [ ${#chronomRegistryPassword} -lt 51 ]
+    do
+        echo
+        red "Chronom Registry Password must be 52 characters long"
+        red "Please enter the Chronom Registry Password that was provided to you: "
+        read -s chronomRegistryPassword
+    done
+fi
+
+yellow_bold "Validating Chronom Credentials"
+validate_chronom_auth
+
+## Validating that the provided Chronom Credentials are valid, if not, prompting the user to re-enter them
+while [ "$statusCode" -ne 200 ]
+do
+    red_bold "The provided Chronom Credentials are not valid"
+    red_bold "Please enter the Chronom Auth Id that was provided to you"
+    echo
+    read -s chronomAuthId
+    echo
+    red_bold "Please enter the Chronom Auth Secret that was provided to you"
+    echo
+    read -s chronomAuthSecret
+    echo
+    validate_chronom_auth
+done
+green "Credentials validated successfuly"
+if [[ -n ${args[--chronom-registry-username]} ]]; then
+    chronomRegistryUsername=${args[--chronom-registry-username]}
+else
+    chronomRegistryUsername=org-$chronomAuthId
+fi
 
 accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
@@ -63,16 +132,6 @@ tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":
 eksctlTags="Application=Chronom A.I.,DeployedAt=UTC-$(date --utc +%Y-%m-%d:%H:%M:%S)"
 
 # validate_chronom_auth $chronomAuthId
-
-yellow_bold "Please enter the Chronom Registry Password that was provided to you: "
-read -s chronomRegistryPassword
-while [ ${#chronomRegistryPassword} -lt 51 ]
-do
-    echo
-    red "Chronom Registry Password must be 52 characters long"
-    red "Please enter the Chronom Registry Password that was provided to you: "
-    read -s chronomRegistryPassword
-done
 
 if [ -z "${args[--ro-role-arn]}" ] && [ -z "${args[--ro-user-access-key]}" ] && [ -z "${args[--ro-user-secret-key]}" ]; then
     ## Create Chronom user

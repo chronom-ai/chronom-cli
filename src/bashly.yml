@@ -239,13 +239,17 @@ commands:
         help: |-
           The username for the Chronom A.I. Registry.
           This value can be obtained from the Chronom A.I. Registration Email.
+        conflicts:
+        - "--chronom-encoded-credentials"
 
       - long: --chronom-auth-id
         arg: chronom-auth-id
-        required: true
+        required: false
         help: |-
           The Chronom A.I. Auth Client ID.
           This value can be obtained from the Chronom A.I. Registration Email.
+        conflicts:
+        - "--chronom-encoded-credentials"
 
       - long: --chronom-version
         arg: chronom-version
@@ -326,6 +330,19 @@ commands:
           The Secret Key of the ASM Read Write User.
           This value is only in case you want to use an existing IAM role and Users
 
+      - long: --chronom-encoded-credentials
+        arg: chronom-encoded-credentials
+        required: false
+        help: |-
+          The Base64 encoded credentials for the Chronom A.I. Registry, auth ID, and auth secret.
+          The value is to be an encoded version of a JSON object with the following properties:
+          - orgId
+          - orgSecret
+          - registryPassword
+          The encoded string must be a single line, and must not contain any spaces or newlines.
+        conflicts:
+        - "--chronom-auth-id"
+        - "--chronom-registry-username"
 
 
 
