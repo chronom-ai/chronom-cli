@@ -13,6 +13,8 @@ minNodes=${args[--min-nodes]}
 maxNodes=${args[--max-nodes]}
 chronomReadOnlyUsername=${args[--chronom-readonly-username]}
 chronomReadOnlyUserarn=${args[--chronom-readonly-userarn]}
+nodeTypeLarge=${args[--node-type-large]}
+maxNodesLarge=${args[--max-nodes-large]}
 accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
 tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'

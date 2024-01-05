@@ -2,7 +2,7 @@ install_eksctl() {
     yellow "# Checking eksctl version"
     if command -v eksctl >/dev/null 2>&1; then
         eksctl_version=$(eksctl version)
-        required_version="0.153.0"
+        required_version="0.160.0"
         
         if [[ "$(printf '%s\n' "$required_version" "$eksctl_version" | sort -V | tail -n 1)" == "$eksctl_version" ]]; then
             green "# eksctl is installed and version is greater than or equal to $required_version"

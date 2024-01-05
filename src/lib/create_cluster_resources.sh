@@ -235,7 +235,7 @@ create_cluster_complete(){
         green "# Calico CNI deployed successfully"
     else
         yellow "# Configuring AWS VPC CNI to support Network Policies"
-        aws eks update-addon --cluster-name "$clusterName" --region "$region" --addon-name vpc-cni --resolve-conflicts PRESERVE --configuration-values '{"enableNetworkPolicy": "true"}'
+        addon=$(aws eks update-addon --cluster-name "$clusterName" --region "$region" --addon-name vpc-cni --resolve-conflicts PRESERVE --configuration-values '{"enableNetworkPolicy": "true"}')
         green "# AWS VPC CNI configured successfully"
     fi
     

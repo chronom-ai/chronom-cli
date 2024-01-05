@@ -76,7 +76,7 @@ commands:
       arg: min-nodes
       repeatable: false
       help: The minimum number of nodes to use
-      default: "1"
+      default: "0"
 
     - long: --max-nodes
       arg: max-nodes
