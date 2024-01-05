@@ -93,7 +93,7 @@ do
     newActions+=($action)
   else
     # If it doesn't, add the wildcard version of the action to the newActions array
-    if [[ $action == *"Batch"* ]]
+    if [[ $action == *":Batch"* ]]
     then
       # If the action contains Batch, then split after the second capital letter (For example, BatchGetCollection => BatchGet)
       newAction=$(echo $action | sed -E 's/([A-Z][a-z]+)([A-Z][a-z]+)/\1\2 /g' | awk '{print $1}')
@@ -103,11 +103,27 @@ do
       # If the action contains Batch, then split after the second capital letter (For example, BatchGetCollection => BatchGet)
       newAction=$(echo $action | sed -E 's/([A-Z][a-z]+)([A-Z][a-z]+)/\1\2 /g' | awk '{print $1}')
       newActions+=($newAction*)
-    elif [[ $action == *"PartiQLSelect"* ]]
+    elif [[ $action == *":PartiQLSelect"* ]]
     then
-      # If the action contains Batch, then split after the second capital letter (For example, BatchGetCollection => BatchGet)
-      # newAction=$(echo $action | sed -E 's/([A-Z][a-z]+)([A-Z][a-z]+)/\1\2 /g' | awk '{print $1}')
       newActions+=($action*)
+    elif [[ $action == *":list"* ]]
+    then
+      # Replace :list with :List
+      newAction=$(echo $action | sed -E 's/list/List/g')
+      newAction=$(echo $newAction | sed -E 's/([A-Z][a-z]+)/\1 /g' | awk '{print $1}')
+      newActions+=($newAction*)
+    elif [[ $action == *":get"* ]]
+    then
+      # Replace :get with :Get
+      newAction=$(echo $action | sed -E 's/get/Get/g')
+      newAction=$(echo $newAction | sed -E 's/([A-Z][a-z]+)/\1 /g' | awk '{print $1}')
+      newActions+=($newAction*)
+    elif [[ $action == *":describe"* ]]
+    then
+      # Replace :describe with :Describe
+      newAction=$(echo $action | sed -E 's/describe/Describe/g')
+      newAction=$(echo $newAction | sed -E 's/([A-Z][a-z]+)/\1 /g' | awk '{print $1}')
+      newActions+=($newAction*)
     else
       # If the action doesn't contain Batch, then split after the first capital letter (For example, GetAccountSummary => Get)
       newAction=$(echo $action | sed -E 's/([A-Z][a-z]+)/\1 /g' | awk '{print $1}')
@@ -126,4 +142,4 @@ newActions=($(echo "${newActions[@]}" | tr ' ' '\n' | sort | tr '\n' ' '))
 newJson=$(echo "$json" | jq --argjson newActions "$(printf '%s\n' "${newActions[@]}" | jq -R . | jq -s .)" '.Statement[].Action = $newActions')
 
 # Print the new JSON object
-echo $newJson >> readonly-policy-new-wildcard.json
+echo $newJson > readonly-policy-new-wildcard-better.json
