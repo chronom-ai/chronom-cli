@@ -106,6 +106,12 @@ do
     elif [[ $action == *":PartiQLSelect"* ]]
     then
       newActions+=($action*)
+    elif [[ $action == *":ESHttpGet"* ]]
+    then
+      newActions+=($action*)
+    elif [[ $action == *":ESHttpHead"* ]]
+    then
+      newActions+=($action*)
     elif [[ $action == *":list"* ]]
     then
       # Replace :list with :List
