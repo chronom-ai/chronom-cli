@@ -534,43 +534,37 @@ commands:
       required: false
       private: true
 
-  # - name: chronom-temp
-  #   help: Upgrade Chronom Version
-  #   dependencies:
-  #     aws: |-
-  #       Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
-  #       Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-  #     kubectl: |-
-  #       Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
-  #       Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/
-  #     eksctl: |-
-  #       Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
-  #       Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
-  #     helm: |-
-  #       Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
-  #       Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/
-  #     jq: Please install jq - https://stedolan.github.io/jq/download/
-  #   flags:
-  #   - long: --cluster-name
-  #     short: -n
-  #     arg: cluster-name
-  #     required: true
-  #     help: The name of the EKS Cluster where chronom is installed - usually chronom-cluster
-  #     completions:
-  #     - "chronom-cluster"
-  #   - long: --region
-  #     short: -r
-  #     arg: region
-  #     required: true
-  #     repeatable: false
-  #     help: The AWS region where the EKS Cluster is located
-  #     validate: available_aws_region
-  #     completions:
-  #     - "eu-north-1"
-  #   - long: --namespace
-  #     arg: namespace
-  #     default: chronom
-  #     help: Namespace where chronom is installed - usually chronom
+  - name: iam-permissions
+    help: Create Resources
+    dependencies:
+      aws: |-
+        Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+        Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+    flags:
+    - long: --user-name
+      arg: user-name
+      required: false
+      help: The name of the IAM User assigned to chronom
+      completions:
+      - "chronom-readonly-user"
+      conflicts:
+        - "--role-arn"
+        - "--role-name"
+    - long: --role-name
+      arg: role-name
+      required: false
+      help: The Name of the IAM Role assigned to chronom
+      conflicts:
+        - "--user-name"
+        - "--role-arn"
+    - long: --role-arn
+      arg: role-arn
+      required: false
+      help: The Name of the IAM Role assigned to chronom
+      conflicts:
+        - "--user-name"
+        - "--role-name"
+
 
 - name: completions
   help: |-

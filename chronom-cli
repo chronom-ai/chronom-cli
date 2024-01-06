@@ -997,7 +997,8 @@ chronom_cli_upgrade_usage() {
   echo
 
   printf "%s\n" "$(bold "Commands:")"
-  printf "  %s   Upgrade Chronom Version\n" "$(green "chronom")"
+  printf "  %s   Upgrade Chronom Version\n" "$(green "chronom")        "
+  printf "  %s   Create Resources\n" "$(green "iam-permissions")"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -1044,6 +1045,44 @@ chronom_cli_upgrade_chronom_usage() {
     printf "  %s\n" "$(yellow "--namespace NAMESPACE")"
     printf "    Namespace where chronom is installed - usually chronom\n"
     printf "    Default: chronom\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+chronom_cli_upgrade_iam_permissions_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "chronom-cli upgrade iam-permissions - Create Resources\n"
+    echo
+
+  else
+    printf "chronom-cli upgrade iam-permissions - Create Resources\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  chronom-cli upgrade iam-permissions [OPTIONS]\n"
+  printf "  chronom-cli upgrade iam-permissions --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    printf "  %s\n" "$(yellow "--user-name USER-NAME")"
+    printf "    The name of the IAM User assigned to chronom\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--role-name ROLE-NAME")"
+    printf "    The Name of the IAM Role assigned to chronom\n"
+    echo
+
+    printf "  %s\n" "$(yellow "--role-arn ROLE-ARN")"
+    printf "    The Name of the IAM Role assigned to chronom\n"
     echo
 
     printf "  %s\n" "$(yellow "--help, -h")"
@@ -1892,6 +1931,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "eu-north-1")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'upgrade iam-permissions\'*\'--user-name\')'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "chronom-readonly-user")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'c chronom complete-deployment-eks\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--auto-validate --chronom-auth-id --chronom-namespace --chronom-readonly-username --chronom-registry-name --chronom-registry-username --chronom-version --create-rsa-key --dns-record --help --key-pair-name --max-nodes --max-nodes-large --min-nodes --name --node-type --node-type-large --region --setup-calico-cni --skip-certificate-setup --skip-gp3-setup --skip-ingress-setup --version -d -h -n -r -v")" -- "$cur" )'
   echo $'      ;;'
@@ -1950,6 +1993,10 @@ send_completions() {
   echo $''
   echo $'    \'delete chronom user-iam\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --name -h -n")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'upgrade iam-permissions\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help --role-arn --role-name --user-name -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'c cluster-eks\'*\'--region\')'
@@ -2137,7 +2184,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    \'upgrade\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_chronom-cli_completions_filter "--help -h chronom iam-permissions")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'create\'*)'
@@ -2703,6 +2750,82 @@ chronom_cli_upgrade_chronom_command() {
   green "# Note that it might take a moment for the new version to completly replace the old one"
 
   rm ./values.yaml
+}
+
+chronom_cli_upgrade_iam_permissions_command() {
+  yellow "# Upgrading IAM Permissions"
+
+  accountId=$(aws sts get-caller-identity --query 'Account' --output text)
+
+  tags='[{"Key":"Application","Value":"Chronom A.I."},{"Key":"DeployedAt","Value":"UTC-'$(date --utc +%Y-%m-%d:%H:%M:%S)'"}]'
+
+  # If ${args[--user-name]} was provided, role arn will be: arn:aws:iam::${accountId}:role/${args[--user-name]}-role
+  # else if ${args[--role-arn]} was provided, role arn will be: ${args[--role-arn]}
+  # else throw error since one of the two is required
+  if [[ -n "${args[--user-name]}" ]]; then
+    roleArn="arn:aws:iam::${accountId}:role/${args[--user-name]}-role"
+    roleName="${args[--user-name]}-role"
+  elif [[ -n "${args[--role-arn]}" ]]; then
+    roleArn="${args[--role-arn]}"
+    roleName="${roleArn##*/}"
+  elif [[ -n "${args[--role-name]}" ]]; then
+    roleArn="arn:aws:iam::${accountId}:role/${args[--role-name]}"
+    roleName="${args[--role-name]}"
+  else
+    red "Either --user-name , --role-arn or --role-name must be provided"
+    exit 1
+  fi
+
+  curl -Os https://raw.githubusercontent.com/chronom-ai/chronom-cli/main/public_resources/chronom-readonly-additional-access-policy.json
+
+  currentAttachedPolicies=$(aws iam list-attached-role-policies --role-name "$roleName" --query 'AttachedPolicies[].PolicyArn' --output text)
+
+  # Check if the role has the ReadOnlyAccess policy attached
+  # If it doesn't, attach it
+  if [[ ! "$currentAttachedPolicies" =~ .*arn:aws:iam::aws:policy/ReadOnlyAccess.* ]]; then
+    yellow "# Attaching ReadOnlyAccess policy to role"
+    aws iam attach-role-policy --role-name "$roleName" --policy-arn "arn:aws:iam::aws:policy/ReadOnlyAccess"
+  fi
+
+  # Check if the role has the chronom-readonly-additional-access-policy policy attached
+  # If it does, compare the policy document with ./chronom-readonly-additional-access-policy.json
+  # If they are different, update the policy document
+  # If it doesn't, attach it
+  if [[ "$currentAttachedPolicies" =~ .*arn:aws:iam::$accountId:policy/chronom-readonly-additional-access-policy.* ]]; then
+  # If the policy is attached, check if it is using the latest policy document
+    currentPolicyDocument=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/chronom-readonly-additional-access-policy" --query 'Policy.DefaultVersionId' --output text)
+    currentPolicyDocument=$(aws iam get-policy-version --policy-arn "arn:aws:iam::$accountId:policy/chronom-readonly-additional-access-policy" --version-id "$currentPolicyDocument" --query 'PolicyVersion.Document' --output json)
+    newPolicyDocument=$(cat chronom-readonly-additional-access-policy.json)
+    if ! diff -q <(jq --sort-keys . <<< "$currentPolicyDocument") <(jq --sort-keys . <<< "$newPolicyDocument") &>/dev/null ; then
+      yellow "# Updating chronom-readonly-additional-access-policy policy document"
+      aws iam create-policy-version --policy-arn "arn:aws:iam::$accountId:policy/chronom-readonly-additional-access-policy" --policy-document file://chronom-readonly-additional-access-policy.json --set-as-default
+    fi
+  else
+  # If the policy is not attached, check if it exists
+  # If it doesn't, create it
+  # If it does, check if it is using the latest policy document
+  # If they are different, update the policy document
+     roPolicyArn=$(aws iam list-policies --query "Policies[?PolicyName=='chronom-readonly-additional-access-policy'].Arn" --output text --scope Local)
+     if [[ -z "$roPolicyArn" ]]; then
+     # If the policy doesn't exist, create it
+       roPolicyArn=$(aws iam create-policy --tags "$tags" --policy-name "chronom-readonly-additional-access-policy" --policy-document file://chronom-readonly-additional-access-policy.json  --query 'Policy.Arn' --output text)
+     else
+     # If the policy exists, check if it is using the latest policy document
+       yellow "# chronom-readonly-additional-access-policy policy already exists, verifying it is using latest policy document"
+        currentPolicyDocument=$(aws iam get-policy --policy-arn "$roPolicyArn" --query 'Policy.DefaultVersionId' --output text)
+        newPolicyDocument=$(cat chronom-readonly-additional-access-policy.json)
+        if ! diff -q <(jq --sort-keys . <<< "$currentPolicyDocument") <(jq --sort-keys . <<< "$newPolicyDocument") &>/dev/null ; then
+          yellow "# Updating chronom-readonly-additional-access-policy policy document"
+          aws iam create-policy-version --policy-arn "$roPolicyArn" --policy-document file://chronom-readonly-additional-access-policy.json --set-as-default
+        fi
+     fi
+    yellow "# Attaching chronom-readonly-additional-access-policy policy to role"
+    aws iam attach-role-policy --role-name "$roleName" --policy-arn "$roPolicyArn"
+  fi
+
+  rm chronom-readonly-additional-access-policy.json
+  green "# Successfully upgraded IAM permissions for role $roleArn"
+
 }
 
 chronom_cli_completions_command() {
@@ -5066,6 +5189,13 @@ chronom_cli_upgrade_parse_requirements() {
       shift $#
       ;;
 
+    iam-permissions)
+      action="iam-permissions"
+      shift
+      chronom_cli_upgrade_iam_permissions_parse_requirements "$@"
+      shift $#
+      ;;
+
     "")
       chronom_cli_upgrade_usage >&2
       exit 1
@@ -5261,6 +5391,115 @@ chronom_cli_upgrade_chronom_parse_requirements() {
 
 }
 
+chronom_cli_upgrade_iam_permissions_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        chronom_cli_upgrade_iam_permissions_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  if command -v aws >/dev/null 2>&1; then
+    deps['aws']="$(command -v aws | head -n1)"
+  else
+    printf "missing dependency: aws\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install awscli' to install aws cli and configure aws credentials - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html#:~:text=an%20external%20process-,Setting%20up%20new%20configuration%20and%20credentials,-The%20AWS%20CLI
+  Alternatively you can install aws cli and configure aws credentials by following the official guide - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+    exit 1
+  fi
+
+  action="upgrade iam-permissions"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --user-name)
+
+        for conflict in --role-arn --role-name; do
+          if [[ -n "${args[$conflict]:-}" ]]; then
+            printf "conflicting options: %s cannot be used with %s\n" "$key" "$conflict" >&2
+            exit 1
+          fi
+        done
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--user-name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--user-name requires an argument: --user-name USER-NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --role-name)
+
+        for conflict in --user-name --role-arn; do
+          if [[ -n "${args[$conflict]:-}" ]]; then
+            printf "conflicting options: %s cannot be used with %s\n" "$key" "$conflict" >&2
+            exit 1
+          fi
+        done
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--role-name']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--role-name requires an argument: --role-name ROLE-NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      --role-arn)
+
+        for conflict in --user-name --role-name; do
+          if [[ -n "${args[$conflict]:-}" ]]; then
+            printf "conflicting options: %s cannot be used with %s\n" "$key" "$conflict" >&2
+            exit 1
+          fi
+        done
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--role-arn']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--role-arn requires an argument: --role-arn ROLE-ARN" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 chronom_cli_completions_parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -5344,6 +5583,7 @@ run() {
     "configure kube-context") chronom_cli_configure_kube_context_command ;;
     "upgrade") chronom_cli_upgrade_command ;;
     "upgrade chronom") chronom_cli_upgrade_chronom_command ;;
+    "upgrade iam-permissions") chronom_cli_upgrade_iam_permissions_command ;;
     "completions") chronom_cli_completions_command ;;
   esac
 }
