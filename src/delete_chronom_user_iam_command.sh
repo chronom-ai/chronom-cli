@@ -8,13 +8,14 @@ accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
 userPolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/$userName-permissions-policy" --query 'Policy.Arn' --output text) || red "User Policy not found"
 
-rolePolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/$roleName-permissions-policy" --query 'Policy.Arn' --output text) || red "Role Policy not found"
+rolePolicyArn=$(aws iam get-policy --policy-arn "arn:aws:iam::$accountId:policy/chronom-readonly-additional-access-policy" --query 'Policy.Arn' --output text) || red "Role Policy not found"
 
 yellow "# Detaching User Policy"
 aws iam detach-user-policy --user-name $userName --policy-arn $userPolicyArn || red "User Policy not found"
 
 yellow "# Detaching Role Policy"
 aws iam detach-role-policy --role-name $roleName --policy-arn $rolePolicyArn || red "Role Policy not found"
+aws iam detach-role-policy --role-name $roleName --policy-arn "arn:aws:iam::aws:policy/ReadOnlyAccess" || red "Role Policy not found"
 
 yellow "# Deleting User Policy"
 aws iam delete-policy --policy-arn $userPolicyArn || red "User Policy not found"
