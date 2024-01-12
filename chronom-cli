@@ -2975,33 +2975,6 @@ chronom_cli_create_parse_requirements() {
     exit 1
   fi
 
-  if command -v kubectl >/dev/null 2>&1; then
-    deps['kubectl']="$(command -v kubectl | head -n1)"
-  else
-    printf "missing dependency: kubectl\n" >&2
-    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
-  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
-    exit 1
-  fi
-
-  if command -v eksctl >/dev/null 2>&1; then
-    deps['eksctl']="$(command -v eksctl | head -n1)"
-  else
-    printf "missing dependency: eksctl\n" >&2
-    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
-  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
-    exit 1
-  fi
-
-  if command -v helm >/dev/null 2>&1; then
-    deps['helm']="$(command -v helm | head -n1)"
-  else
-    printf "missing dependency: helm\n" >&2
-    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
-  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
-    exit 1
-  fi
-
   if command -v curl >/dev/null 2>&1; then
     deps['curl']="$(command -v curl | head -n1)"
   else
@@ -3085,6 +3058,33 @@ chronom_cli_create_cluster_eks_parse_requirements() {
 
     esac
   done
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  if command -v helm >/dev/null 2>&1; then
+    deps['helm']="$(command -v helm | head -n1)"
+  else
+    printf "missing dependency: helm\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
+  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
+    exit 1
+  fi
 
   action="create cluster-eks"
 
@@ -3429,6 +3429,33 @@ chronom_cli_create_chronom_complete_deployment_eks_parse_requirements() {
   else
     printf "missing dependency: jq\n" >&2
     printf "%s\n" "Please install jq - https://stedolan.github.io/jq/download/" >&2
+    exit 1
+  fi
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  if command -v helm >/dev/null 2>&1; then
+    deps['helm']="$(command -v helm | head -n1)"
+  else
+    printf "missing dependency: helm\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
+  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
     exit 1
   fi
 
@@ -3777,6 +3804,33 @@ chronom_cli_create_certificate_acm_parse_requirements() {
 
     esac
   done
+
+  if command -v kubectl >/dev/null 2>&1; then
+    deps['kubectl']="$(command -v kubectl | head -n1)"
+  else
+    printf "missing dependency: kubectl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install kubectl' to install kubectl - https://kubernetes.io/docs/tasks/tools/install-kubectl/
+  Alternatively you can install kubectl by following the official guide - https://kubernetes.io/docs/tasks/tools/install-kubectl/" >&2
+    exit 1
+  fi
+
+  if command -v eksctl >/dev/null 2>&1; then
+    deps['eksctl']="$(command -v eksctl | head -n1)"
+  else
+    printf "missing dependency: eksctl\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install eksctl' to install eksctl - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+  Alternatively you can install eksctl by following the official guide - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html" >&2
+    exit 1
+  fi
+
+  if command -v helm >/dev/null 2>&1; then
+    deps['helm']="$(command -v helm | head -n1)"
+  else
+    printf "missing dependency: helm\n" >&2
+    printf "%s\n" "Please run './chronom-cli setup install helm' to install helm - https://helm.sh/docs/intro/install/
+  Alternatively you can install helm by following the official guide - https://helm.sh/docs/intro/install/" >&2
+    exit 1
+  fi
 
   action="create certificate-acm"
 
